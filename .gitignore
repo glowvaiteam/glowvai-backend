@@ -30,7 +30,6 @@ ios/
 *.pem
 *.key
 service-account*.json
-google-services.json
 GoogleService-Info.plist
 
 # Firebase Emulators & Cache
