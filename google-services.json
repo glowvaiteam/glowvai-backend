@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1094835664474",
+    "project_id": "glowvai-v2",
+    "storage_bucket": "glowvai-v2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094835664474:android:c91eca572a758bb30a8a63",
+        "android_client_info": {
+          "package_name": "com.glowvai.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1094835664474-q6n5ufs6fqghjl5mrqlllvlnuutjuj10.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaCBg-trPB4Zf72B-2z6dviEUf50gJub0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1094835664474-q6n5ufs6fqghjl5mrqlllvlnuutjuj10.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
