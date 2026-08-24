@@ -38,6 +38,14 @@
     "scheme": "glowvai",
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "7865bc57-ca6d-4619-9fe6-7dd9cfc61449"
+      }
     }
   }
 }
