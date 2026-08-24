@@ -1,0 +1,43 @@
+{
+  "expo": {
+    "name": "GlowVAI",
+    "slug": "glowvai-v2",
+    "version": "2.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "splash": {
+      "resizeMode": "contain",
+      "backgroundColor": "#0F172A"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.glowvai.app"
+    },
+    "android": {
+      "package": "com.glowvai.app",
+      "versionCode": 200,
+      "googleServicesFile": "./google-services.json",
+      "adaptiveIcon": {
+        "backgroundColor": "#0F172A"
+      },
+      "permissions": [
+        "CAMERA",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font"
+    ],
+    "scheme": "glowvai",
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

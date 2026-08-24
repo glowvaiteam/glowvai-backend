@@ -1,0 +1,2 @@
+# Machine Learning Model Assets
+This directory will contain the CNN skin diagnostic model files (e.g. .tflite / .onnx), labels, input shape definitions, preprocessing instructions, and licensing metadata.

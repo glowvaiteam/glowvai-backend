@@ -1,0 +1,179 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- Helper Functions ---
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.admin == true ||
+        request.auth.token.role == 'admin' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin')
+      );
+    }
+    
+    function isVendor(vendorId) {
+      return isAuthenticated() && (
+        request.auth.uid == vendorId ||
+        request.auth.token.vendorId == vendorId ||
+        (request.auth.token.role == 'vendor' && request.auth.uid == vendorId)
+      );
+    }
+
+    // --- Users Collection ---
+    match /users/{userId} {
+      // Any authenticated user can read their own profile; Admins can read all profiles
+      allow read: if isOwner(userId) || isAdmin();
+      
+      // Initial registration: user can create their own profile as 'customer' only
+      allow create: if isOwner(userId) 
+        && request.resource.data.uid == userId
+        && request.resource.data.role == 'customer'
+        && request.resource.data.referralCoinBalance == 0;
+      
+      // Updates: customer cannot modify their own role, referralCoinBalance, or admin flags
+      allow update: if (isOwner(userId) 
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.referralCoinBalance == resource.data.referralCoinBalance
+        && request.resource.data.uid == resource.data.uid)
+        || isAdmin();
+
+      allow delete: if isAdmin();
+
+      // Subcollections: Addresses, Cart, Scan History, Transactions
+      match /addresses/{addressId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+      
+      match /cart/{cartItemId} {
+        allow read, write: if isOwner(userId);
+      }
+      
+      match /scanHistory/{scanId} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+
+      match /coinTransactions/{txId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow write: if isAdmin(); // Only server/functions/admin can award or deduct coins
+      }
+    }
+
+    // --- Vendor Onboarding Applications ---
+    match /vendorApplications/{applicationId} {
+      // Vendor applicant can read their own application; Admins can read all
+      allow read: if (isAuthenticated() && resource.data.applicantUid == request.auth.uid) || isAdmin();
+      
+      // Applicant can create their application with PENDING_APPROVAL status
+      allow create: if isAuthenticated() 
+        && request.resource.data.applicantUid == request.auth.uid
+        && request.resource.data.status == 'PENDING_APPROVAL';
+      
+      // Only Admins can approve/reject applications
+      allow update, delete: if isAdmin();
+    }
+
+    // --- Vendors Profile & Store Inventory ---
+    match /vendors/{vendorId} {
+      // Anyone can read active vendor info for ordering; Admins & vendor owner can read always
+      allow read: if resource.data.isActive == true || isVendor(vendorId) || isAdmin();
+      
+      // Only Admins can create new vendors (upon application approval)
+      allow create: if isAdmin();
+      
+      // Vendor owner can update operatingHours; Admin can update everything
+      allow update: if (isVendor(vendorId) 
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.vendorId == resource.data.vendorId
+        && request.resource.data.applicationStatus == resource.data.applicationStatus)
+        || isAdmin();
+        
+      allow delete: if isAdmin();
+
+      // Vendor Inventory Subcollection
+      match /vendorInventory/{productId} {
+        allow read: if true;
+        allow write: if isVendor(vendorId) || isAdmin();
+      }
+    }
+
+    // --- Products Catalog ---
+    match /products/{productId} {
+      // Public catalog read
+      allow read: if true;
+      // Admin-only management
+      allow write: if isAdmin();
+    }
+
+    // --- Delivery Zones (Geofencing Polygons) ---
+    match /deliveryZones/{zoneId} {
+      // Authenticated users and riders can read active zones for polygon matching
+      allow read: if isAuthenticated();
+      // Admin-only management
+      allow write: if isAdmin();
+    }
+
+    // --- Orders ---
+    match /orders/{orderId} {
+      // Customers can read their own orders; Vendors can read orders assigned to them; Admins read all
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        (resource.data.vendorId != null && resource.data.vendorId == request.auth.uid) ||
+        isAdmin()
+      );
+
+      // Customers can create orders for themselves with PLACED status
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.status == 'PLACED'
+        && (!('deliveryAssignment' in request.resource.data) || request.resource.data.deliveryAssignment == null);
+
+      // State transitions:
+      // 1. Vendors can update status between VENDOR_ACCEPTED, VENDOR_REJECTED, and PACKED for their assigned orders
+      //    Must not tamper with customer userId, pricing, items, or vendorId
+      // 2. Admins can update any field (e.g. deliveryAssignment, OUT_FOR_DELIVERY, CANCELLED, DELIVERED)
+      allow update: if (
+        isAuthenticated() &&
+        resource.data.vendorId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.vendorId == resource.data.vendorId &&
+        request.resource.data.items == resource.data.items &&
+        request.resource.data.pricing == resource.data.pricing &&
+        (
+          request.resource.data.status == 'VENDOR_ACCEPTED' ||
+          request.resource.data.status == 'VENDOR_REJECTED' ||
+          request.resource.data.status == 'PACKED'
+        )
+      ) || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // --- Beauty Protection Rules & Claims ---
+    match /beautyProtectionRules/{ruleId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /beautyProtectionClaims/{claimId} {
+      allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid && request.resource.data.status == 'SUBMITTED';
+      allow update, delete: if isAdmin();
+    }
+
+    // Default catch-all rule: Deny everything else
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
