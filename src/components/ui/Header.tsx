@@ -27,6 +27,8 @@ export const Header: React.FC<HeaderProps> = ({
       onBackPress();
     } else if (router.canGoBack()) {
       router.back();
+    } else {
+      router.replace('/(customer)/(tabs)');
     }
   };
 

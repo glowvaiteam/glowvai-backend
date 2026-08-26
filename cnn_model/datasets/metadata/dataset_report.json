@@ -1,0 +1,30 @@
+{
+    "SCUT": {
+        "dataset": "SCUT-FBP5500",
+        "image_statistics": {
+            "total_images": 5500,
+            "valid_images": 5500,
+            "corrupted_images": 0,
+            "non_rgb_images": 0,
+            "invalid_extensions": 0,
+            "missing_dimensions": 0
+        },
+        "rating_rows": 330000,
+        "unique_images_in_labels": 5500,
+        "missing_rating_values": 0,
+        "corrupted_files": []
+    },
+    "CelebA": {
+        "dataset": "CelebA",
+        "image_statistics": {
+            "total_images": 202599,
+            "valid_images": 202599,
+            "corrupted_images": 0,
+            "non_rgb_images": 0,
+            "invalid_extensions": 0,
+            "missing_dimensions": 0
+        },
+        "attribute_lines": 202601,
+        "corrupted_files": []
+    }
+}

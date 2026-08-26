@@ -1,10 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Header } from '../../../src/components/ui';
 
 export default function ScanTab() {
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <Header title="AI Skin Diagnostics" />
@@ -16,7 +19,11 @@ export default function ScanTab() {
         <Text style={styles.subtitle}>
           Capture a clear selfie in natural light to analyze acne, texture, hydration, and dark spots.
         </Text>
-        <TouchableOpacity style={styles.startScanBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.startScanBtn}
+          onPress={() => router.push('/(customer)/scan/camera')}
+          activeOpacity={0.8}
+        >
           <LinearGradient
             colors={['#1D4ED8', '#2563EB', '#38BDF8']}
             style={styles.btnGradient}

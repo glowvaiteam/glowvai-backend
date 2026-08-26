@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "1094835664474-m8im9vkcje8c0mkvd9eok972td8qj8lk.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.glowvai.app",
+            "certificate_hash": "9263b6e86fed5b4b91f2bddd6ccdc626f2f2a108"
+          }
+        },
+        {
           "client_id": "1094835664474-q6n5ufs6fqghjl5mrqlllvlnuutjuj10.apps.googleusercontent.com",
           "client_type": 3
         }

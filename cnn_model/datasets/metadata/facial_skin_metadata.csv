@@ -1,0 +1,46 @@
+image_id,image_path,dataset_name,task,split,gender,view
+1_front,datasets\raw\facial_skin\images\front.jpg,facial_skin,facial_skin,unassigned,male,front
+1_right-side,datasets\raw\facial_skin\images\right-side.jpg,facial_skin,facial_skin,unassigned,male,right-side
+1_left-side,datasets\raw\facial_skin\images\left-side.jpg,facial_skin,facial_skin,unassigned,male,left-side
+2_front,datasets\raw\facial_skin\images\front (2).jpg,facial_skin,facial_skin,unassigned,female,front
+2_right-side,datasets\raw\facial_skin\images\right-side (2).jpg,facial_skin,facial_skin,unassigned,female,right-side
+2_left-side,datasets\raw\facial_skin\images\left-side (2).jpg,facial_skin,facial_skin,unassigned,female,left-side
+3_front,datasets\raw\facial_skin\images\front (3).jpg,facial_skin,facial_skin,unassigned,female,front
+3_right-side,datasets\raw\facial_skin\images\right-side (3).jpg,facial_skin,facial_skin,unassigned,female,right-side
+3_left-side,datasets\raw\facial_skin\images\left-side (3).jpg,facial_skin,facial_skin,unassigned,female,left-side
+4_front,datasets\raw\facial_skin\images\front (4).jpg,facial_skin,facial_skin,unassigned,female,front
+4_right-side,datasets\raw\facial_skin\images\right-side (4).jpg,facial_skin,facial_skin,unassigned,female,right-side
+4_left-side,datasets\raw\facial_skin\images\left-side (4).jpg,facial_skin,facial_skin,unassigned,female,left-side
+5_front,datasets\raw\facial_skin\images\front (5).jpg,facial_skin,facial_skin,unassigned,male,front
+5_right-side,datasets\raw\facial_skin\images\right-side (5).jpg,facial_skin,facial_skin,unassigned,male,right-side
+5_left-side,datasets\raw\facial_skin\images\left-side (5).jpg,facial_skin,facial_skin,unassigned,male,left-side
+6_front,datasets\raw\facial_skin\images\front (6).jpg,facial_skin,facial_skin,unassigned,female,front
+6_right-side,datasets\raw\facial_skin\images\right-side (6).jpg,facial_skin,facial_skin,unassigned,female,right-side
+6_left-side,datasets\raw\facial_skin\images\left-side (6).jpg,facial_skin,facial_skin,unassigned,female,left-side
+7_front,datasets\raw\facial_skin\images\front (7).jpg,facial_skin,facial_skin,unassigned,male,front
+7_right-side,datasets\raw\facial_skin\images\right-side (7).jpg,facial_skin,facial_skin,unassigned,male,right-side
+7_left-side,datasets\raw\facial_skin\images\left-side (7).jpg,facial_skin,facial_skin,unassigned,male,left-side
+8_front,datasets\raw\facial_skin\images\front (8).jpg,facial_skin,facial_skin,unassigned,female,front
+8_right-side,datasets\raw\facial_skin\images\right-side (8).jpg,facial_skin,facial_skin,unassigned,female,right-side
+8_left-side,datasets\raw\facial_skin\images\left-side (8).jpg,facial_skin,facial_skin,unassigned,female,left-side
+9_front,datasets\raw\facial_skin\images\front (9).jpg,facial_skin,facial_skin,unassigned,female,front
+9_right-side,datasets\raw\facial_skin\images\right-side (9).jpg,facial_skin,facial_skin,unassigned,female,right-side
+9_left-side,datasets\raw\facial_skin\images\left-side (9).jpg,facial_skin,facial_skin,unassigned,female,left-side
+10_front,datasets\raw\facial_skin\images\front (10).jpg,facial_skin,facial_skin,unassigned,female,front
+10_right-side,datasets\raw\facial_skin\images\right-side (10).jpg,facial_skin,facial_skin,unassigned,female,right-side
+10_left-side,datasets\raw\facial_skin\images\left-side (10).jpg,facial_skin,facial_skin,unassigned,female,left-side
+11_front,datasets\raw\facial_skin\images\front (11).jpg,facial_skin,facial_skin,unassigned,female,front
+11_right-side,datasets\raw\facial_skin\images\right-side (11).jpg,facial_skin,facial_skin,unassigned,female,right-side
+11_left-side,datasets\raw\facial_skin\images\left-side (11).jpg,facial_skin,facial_skin,unassigned,female,left-side
+12_front,datasets\raw\facial_skin\images\front (12).jpg,facial_skin,facial_skin,unassigned,female,front
+12_right-side,datasets\raw\facial_skin\images\right-side (12).jpg,facial_skin,facial_skin,unassigned,female,right-side
+12_left-side,datasets\raw\facial_skin\images\left-side (12).jpg,facial_skin,facial_skin,unassigned,female,left-side
+13_front,datasets\raw\facial_skin\images\front (13).jpg,facial_skin,facial_skin,unassigned,female,front
+13_right-side,datasets\raw\facial_skin\images\right-side (13).jpg,facial_skin,facial_skin,unassigned,female,right-side
+13_left-side,datasets\raw\facial_skin\images\left-side (13).jpg,facial_skin,facial_skin,unassigned,female,left-side
+14_front,datasets\raw\facial_skin\images\front (14).jpg,facial_skin,facial_skin,unassigned,female,front
+14_right-side,datasets\raw\facial_skin\images\right-side (14).jpg,facial_skin,facial_skin,unassigned,female,right-side
+14_left-side,datasets\raw\facial_skin\images\left-side (14).jpg,facial_skin,facial_skin,unassigned,female,left-side
+15_front,datasets\raw\facial_skin\images\front (15).jpg,facial_skin,facial_skin,unassigned,male,front
+15_right-side,datasets\raw\facial_skin\images\right-side (15).jpg,facial_skin,facial_skin,unassigned,male,right-side
+15_left-side,datasets\raw\facial_skin\images\left-side (15).jpg,facial_skin,facial_skin,unassigned,male,left-side

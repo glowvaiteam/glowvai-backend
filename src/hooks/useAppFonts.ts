@@ -1,11 +1,9 @@
 /**
  * Custom Font Loader Hook for GlowVAI V2
- * Strictly loads the actual Syne font family from @expo-google-fonts/syne
  * 
- * Rules:
- * 1. Never falls back silently to another font (System, Inter, Poppins).
- * 2. If font loading fails, reports the exact error.
- * 3. Applies the loaded family name ONLY when confirmed loaded.
+ * Loads:
+ * 1. The official Bunch font family from local assets/fonts (Bunch-Heavy, Bunch-Bold, Bunch-ExtraBold, etc.)
+ * 2. The official Syne Google Font family from @expo-google-fonts/syne
  */
 
 import {
@@ -21,6 +19,15 @@ export interface AppFontsState {
   isLoaded: boolean;
   fontError: Error | null;
   fontFamily: {
+    // Bunch Font Family
+    bunchHeavy: string;
+    bunchBold: string;
+    bunchExtraBold: string;
+    bunchSemiBold: string;
+    bunchMedium: string;
+    bunchRegular: string;
+
+    // Syne Font Family
     syneRegular: string;
     syneMedium: string;
     syneSemiBold: string;
@@ -31,6 +38,15 @@ export interface AppFontsState {
 
 export const useAppFonts = (): AppFontsState => {
   const [fontsLoaded, fontError] = useFonts({
+    // Local Bunch Fonts
+    'Bunch-Heavy': require('../../assets/fonts/Bunch-Heavy.ttf'),
+    'Bunch-Bold': require('../../assets/fonts/Bunch-Bold.ttf'),
+    'Bunch-ExtraBold': require('../../assets/fonts/Bunch-ExtraBold.ttf'),
+    'Bunch-SemiBold': require('../../assets/fonts/Bunch-SemiBold.ttf'),
+    'Bunch-Medium': require('../../assets/fonts/Bunch-Medium.ttf'),
+    'Bunch-Regular': require('../../assets/fonts/Bunch-Regular.ttf'),
+
+    // Google Syne Fonts
     Syne_400Regular,
     Syne_500Medium,
     Syne_600SemiBold,
@@ -39,7 +55,7 @@ export const useAppFonts = (): AppFontsState => {
   });
 
   if (fontError) {
-    console.error('[useAppFonts] Critical: Failed to load Syne Google Font:', fontError.message);
+    console.error('[useAppFonts] Font Loading Error:', fontError.message);
   }
 
   if (!fontsLoaded) {
@@ -54,6 +70,13 @@ export const useAppFonts = (): AppFontsState => {
     isLoaded: true,
     fontError: null,
     fontFamily: {
+      bunchHeavy: 'Bunch-Heavy',
+      bunchBold: 'Bunch-Bold',
+      bunchExtraBold: 'Bunch-ExtraBold',
+      bunchSemiBold: 'Bunch-SemiBold',
+      bunchMedium: 'Bunch-Medium',
+      bunchRegular: 'Bunch-Regular',
+
       syneRegular: 'Syne_400Regular',
       syneMedium: 'Syne_500Medium',
       syneSemiBold: 'Syne_600SemiBold',

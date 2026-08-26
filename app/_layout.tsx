@@ -9,26 +9,9 @@ export default function RootLayout() {
       <StatusBar style="light" />
       <Stack
         screenOptions={{
-          headerStyle: {
-            backgroundColor: '#0F172A',
-          },
-          headerTintColor: '#F8FAFC',
-          headerTitleStyle: {
-            fontWeight: '600',
-          },
-          contentStyle: {
-            backgroundColor: '#0F172A',
-          },
+          headerShown: false,
         }}
-      >
-        <Stack.Screen
-          name="index"
-          options={{
-            title: 'GlowVAI',
-            headerShown: false,
-          }}
-        />
-      </Stack>
+      />
     </SafeAreaProvider>
   );
 }

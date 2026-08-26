@@ -1,0 +1,13 @@
+datasets:
+
+  scut_fbp5500:
+    enabled: true
+    generator: SCUTMetadataGenerator
+    processed_dir: datasets/processed/scut_fbp5500
+    metadata_file: scut_metadata.csv
+
+  celeba:
+    enabled: true
+    generator: CelebAMetadataGenerator
+    processed_dir: datasets/processed/celeba
+    metadata_file: celeba_metadata.csv

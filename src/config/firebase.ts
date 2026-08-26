@@ -9,7 +9,6 @@
  */
 
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, Auth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, FirebaseStorage, connectStorageEmulator } from 'firebase/storage';
 
@@ -42,7 +41,6 @@ const getFirebaseConfig = (): FirebaseClientConfig => {
 
   if (missingKeys.length > 0) {
     const errorMsg = `[GlowVAI Firebase Init Error]: Missing required environment variables:\n${missingKeys.map(k => ` - ${k}`).join('\n')}\n\nPlease copy .env.example to .env and configure valid Firebase project credentials.`;
-    // Log clearly for developer
     console.warn(errorMsg);
   }
 
@@ -62,9 +60,6 @@ const firebaseConfig = getFirebaseConfig();
 // Initialize Firebase App singleton
 export const app: FirebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication
-export const auth: Auth = getAuth(app);
-
 // Initialize Cloud Firestore
 export const db: Firestore = getFirestore(app);
 
@@ -75,10 +70,9 @@ export const storage: FirebaseStorage = getStorage(app);
 if (process.env.EXPO_PUBLIC_USE_FIREBASE_EMULATOR === 'true') {
   const host = process.env.EXPO_PUBLIC_FIREBASE_EMULATOR_HOST || '10.0.2.2';
   try {
-    connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
     connectFirestoreEmulator(db, host, 8080);
     connectStorageEmulator(storage, host, 9199);
-    console.log(`[Firebase Emulators] Connected to ${host} (Auth: 9099, Firestore: 8080, Storage: 9199)`);
+    console.log(`[Firebase Emulators] Connected to ${host} (Firestore: 8080, Storage: 9199)`);
   } catch (emulatorErr) {
     console.warn('[Firebase Emulators] Failed to connect emulator:', emulatorErr);
   }

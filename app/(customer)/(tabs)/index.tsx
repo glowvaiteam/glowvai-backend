@@ -1,87 +1,234 @@
-import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, StatusBar, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  TouchableOpacity,
+  Dimensions,
+  Alert,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { spacing, borderRadius } from '../../../src/design';
 import { useAppFonts } from '../../../src/hooks/useAppFonts';
+import { getLatestSkinReport } from '../../../src/services/scanService';
+import { getRecommendedRoutine } from '../../../src/services/recommendationService';
+
+const { width } = Dimensions.get('window');
 
 export default function CustomerHomeScreen() {
   const router = useRouter();
-  const { fontFamily } = useAppFonts();
+  const { isLoaded, fontFamily } = useAppFonts();
+  const [deliveryMode, setDeliveryMode] = useState<'INSTANT' | 'STANDARD'>('INSTANT');
+  const [cartCount, setCartCount] = useState(0);
+
+  const report = getLatestSkinReport();
+  const recommendedRoutine = getRecommendedRoutine(report);
+
+  const handleAddToCart = (productName: string) => {
+    setCartCount(prev => prev + 1);
+    Alert.alert('Added to Cart', `${productName} added to your delivery bag!`);
+  };
+
+  const handleAddAllToCart = () => {
+    setCartCount(prev => prev + 4);
+    Alert.alert('Full Routine Added!', 'All 4 curated skincare steps added to your bag with 20% AI Scan Discount applied!');
+  };
+
+  const syneFont = isLoaded && fontFamily ? fontFamily.syneBold || fontFamily.syneExtraBold : undefined;
+
+  const glowScore = report?.overallScore || 84;
+  const skinType = report?.skinType || 'COMBINATION';
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#060B18" />
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        
-        {/* Top Location Bar */}
-        <View style={styles.locationBar}>
-          <View style={styles.locationInfo}>
-            <Ionicons name="location-sharp" size={20} color="#38BDF8" />
-            <View style={styles.locationTextContainer}>
-              <Text style={styles.deliveringToLabel}>Location</Text>
-              <Text style={styles.currentAddressText}>Select delivery address ▾</Text>
-            </View>
+
+      {/* Top Hyperlocal Location & Cart Header */}
+      <View style={styles.topHeaderBar}>
+        <TouchableOpacity
+          style={styles.locationSelector}
+          onPress={() => router.push('/(customer)/permissions')}
+          activeOpacity={0.7}
+        >
+          <View style={styles.locationPinCircle}>
+            <Ionicons name="location-sharp" size={16} color="#38BDF8" />
           </View>
-          <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={22} color="#F8FAFC" />
+          <View style={styles.locationInfo}>
+            <View style={styles.locationTitleRow}>
+              <Text style={styles.locationTitle}>HSR Layout, Bengaluru</Text>
+              <Ionicons name="chevron-down" size={14} color="#94A3B8" />
+            </View>
+            <Text style={styles.serviceableTag}>⚡ 30-Min Delivery Active (1.4 km away)</Text>
+          </View>
+        </TouchableOpacity>
+
+        {/* Cart Icon with Dynamic Count Badge */}
+        <TouchableOpacity
+          style={styles.cartIconBtn}
+          onPress={() => Alert.alert('Your Cart', `${cartCount} items in your bag. Free delivery on orders over ₹300!`)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="bag-handle-outline" size={22} color="#F8FAFC" />
+          {cartCount > 0 && (
+            <View style={styles.cartBadge}>
+              <Text style={styles.cartBadgeText}>{cartCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Delivery Mode Toggle (30-Min Flash vs Standard Dispatch) */}
+        <View style={styles.modeToggleContainer}>
+          <TouchableOpacity
+            style={[styles.modeTab, deliveryMode === 'INSTANT' && styles.modeTabActive]}
+            onPress={() => setDeliveryMode('INSTANT')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.modeTabText, deliveryMode === 'INSTANT' && styles.modeTabTextActive]}>
+              ⚡ 30-Min Instant Drop
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.modeTab, deliveryMode === 'STANDARD' && styles.modeTabActive]}
+            onPress={() => setDeliveryMode('STANDARD')}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.modeTabText, deliveryMode === 'STANDARD' && styles.modeTabTextActive]}>
+              📦 Standard Catalog
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Quick Commerce 30-min Delivery Banner */}
-        <LinearGradient
-          colors={['#1D4ED8', '#2563EB', '#38BDF8']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.quickCommerceBanner}
-        >
-          <View style={styles.qcTextSection}>
-            <Text style={styles.qcBadge}>⚡ QUICK-COMMERCE</Text>
-            <Text style={styles.qcTitle}>Skincare in 30–45 Mins</Text>
-            <Text style={styles.qcSubtitle}>Vijayawada Express Partner Pharmacies</Text>
-          </View>
-          <Text style={styles.qcIcon}>🧴</Text>
-        </LinearGradient>
-
-        {/* AI Face Scan Action Card */}
+        {/* AI Skin Diagnosis Summary Card */}
         <TouchableOpacity
-          style={styles.scanCard}
-          onPress={() => router.push('/(customer)/(tabs)/scan')}
+          style={styles.diagnosisHeroCard}
+          onPress={() => router.push('/(customer)/scan/report')}
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#0F1D3D', '#162854']}
-            style={styles.scanCardGradient}
+            colors={['#0F2552', '#0C1B3B']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCardGradient}
           >
-            <View style={styles.scanIconCircle}>
-              <MaterialCommunityIcons name="face-recognition" size={32} color="#38BDF8" />
+            <View style={styles.heroTopRow}>
+              <View style={styles.scorePill}>
+                <Text style={styles.scorePillNum}>{glowScore}</Text>
+                <Text style={styles.scorePillLabel}>/100 GLOW SCORE</Text>
+              </View>
+              <TouchableOpacity
+                style={styles.rescanBtn}
+                onPress={() => router.push('/(customer)/scan/camera')}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="scan" size={14} color="#38BDF8" />
+                <Text style={styles.rescanText}>Rescan Face</Text>
+              </TouchableOpacity>
             </View>
-            <View style={styles.scanTextContainer}>
-              <Text style={[styles.scanTitle, fontFamily ? { fontFamily: fontFamily.syneBold } : null]}>
-                AI Skin Diagnostic Scan
-              </Text>
-              <Text style={styles.scanSubtitle}>
-                Analyze acne, texture, hydration, and dark spots.
-              </Text>
+
+            <Text
+              style={[
+                styles.heroTitle,
+                syneFont ? { fontFamily: syneFont } : { fontWeight: '800' },
+              ]}
+            >
+              {skinType} Skin Profile
+            </Text>
+            <Text style={styles.heroSubtitle}>
+              4 personalized steps formulated to balance sebum, refine pores & boost hydration.
+            </Text>
+
+            <View style={styles.discountTagRow}>
+              <Ionicons name="pricetag" size={13} color="#10B981" />
+              <Text style={styles.discountTagText}>20% AI Scan Discount Applied on Routine</Text>
             </View>
-            <Ionicons name="chevron-forward" size={22} color="#38BDF8" />
           </LinearGradient>
         </TouchableOpacity>
 
-        {/* Real Catalogue Section Placeholder (Zero Dummy Items) */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Curated Products</Text>
+        {/* Section: AI-Curated 4-Step Routine */}
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Your AI-Curated Routine</Text>
+            <Text style={styles.sectionSubtitle}>Dermatology formulations matched to your diagnostic report</Text>
+          </View>
         </View>
 
-        <View style={styles.emptyCatalogCard}>
-          <Ionicons name="sparkles-outline" size={28} color="#38BDF8" />
-          <Text style={styles.emptyCatalogTitle}>No products published yet</Text>
-          <Text style={styles.emptyCatalogSubtitle}>
-            Approved vendor products from Cloud Firestore will appear here.
+        {/* 4-Step Routine Cards */}
+        {recommendedRoutine.map((product) => (
+          <View key={product.id} style={styles.productCard}>
+            <View style={styles.productTopRow}>
+              <View style={styles.stepBadge}>
+                <Text style={styles.stepBadgeText}>STEP {product.stepNumber}: {product.stepName.toUpperCase()}</Text>
+              </View>
+              <View style={styles.etaBadge}>
+                <Ionicons name="flash" size={12} color="#38BDF8" />
+                <Text style={styles.etaText}>{product.deliveryMinutes} MINS</Text>
+              </View>
+            </View>
+
+            <Text style={styles.brandName}>{product.brand}</Text>
+            <Text style={styles.productTitle}>{product.name}</Text>
+
+            {/* Key Active Ingredients */}
+            <View style={styles.ingredientChipsRow}>
+              {product.keyIngredients.map((ing, i) => (
+                <View key={i} style={styles.ingChip}>
+                  <Text style={styles.ingText}>{ing}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Price & Add to Bag Row */}
+            <View style={styles.priceRow}>
+              <View style={styles.priceContainer}>
+                <Text style={styles.priceText}>₹{product.price}</Text>
+                <Text style={styles.originalPriceText}>₹{product.originalPrice}</Text>
+                <View style={styles.saveBadge}>
+                  <Text style={styles.saveBadgeText}>20% OFF</Text>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.addBtn}
+                onPress={() => handleAddToCart(product.name)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.addBtnText}>+ Add to Bag</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+
+        {/* 1-Tap Add All Routine to Cart CTA */}
+        <TouchableOpacity
+          style={styles.addAllBtn}
+          onPress={handleAddAllToCart}
+          activeOpacity={0.85}
+        >
+          <LinearGradient
+            colors={['#1D4ED8', '#2563EB', '#38BDF8']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.addAllGradient}
+          >
+            <Ionicons name="bag-check" size={20} color="#FFFFFF" style={{ marginRight: 8 }} />
+            <Text style={styles.addAllText}>Add Complete Routine to Cart (₹1,757)</Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Dynamic Pricing Note (PDF Workflow Logic) */}
+        <View style={styles.pricingNoteCard}>
+          <Ionicons name="information-circle-outline" size={16} color="#38BDF8" />
+          <Text style={styles.pricingNoteText}>
+            Free delivery on orders over ₹300. Orders below ₹300 include a flat ₹25 small cart fee & ₹3 tamper-evident packaging.
           </Text>
         </View>
-
       </ScrollView>
     </SafeAreaView>
   );
@@ -92,140 +239,337 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#060B18',
   },
-  scrollContent: {
-    padding: spacing.xl,
-    paddingBottom: spacing.xxxl,
-  },
-  locationBar: {
+  topHeaderBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#131D33',
   },
-  locationInfo: {
+  locationSelector: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
-  locationTextContainer: {
-    marginLeft: spacing.sm,
+  locationPinCircle: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
-  deliveringToLabel: {
-    fontSize: 11,
-    color: '#64748B',
-    fontWeight: '600',
+  locationInfo: {
+    flex: 1,
   },
-  currentAddressText: {
+  locationTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  locationTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: '#F8FAFC',
   },
-  notificationBtn: {
+  serviceableTag: {
+    fontSize: 11,
+    color: '#38BDF8',
+    fontWeight: '600',
+  },
+  cartIconBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: '#131D33',
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
     borderWidth: 1,
     borderColor: '#1E293B',
   },
-  quickCommerceBanner: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: spacing.lg,
-    borderRadius: borderRadius.xl,
-    marginBottom: spacing.xl,
-  },
-  qcTextSection: {
-    flex: 1,
-  },
-  qcBadge: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    letterSpacing: 0.5,
-    marginBottom: 4,
-  },
-  qcTitle: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  qcSubtitle: {
-    fontSize: 12,
-    color: '#E0F2FE',
-    marginTop: 2,
-  },
-  qcIcon: {
-    fontSize: 34,
-    marginLeft: spacing.md,
-  },
-  scanCard: {
-    borderRadius: borderRadius.xl,
-    overflow: 'hidden',
-    marginBottom: spacing.xxl,
-    borderWidth: 1.5,
-    borderColor: '#1E40AF',
-  },
-  scanCardGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.lg,
-  },
-  scanIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#1E293B',
+  cartBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#2563EB',
+    borderRadius: 9,
+    width: 18,
+    height: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
-  scanTextContainer: {
+  cartBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+  modeToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#0F1E3D',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+  },
+  modeTab: {
     flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 10,
   },
-  scanTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F8FAFC',
+  modeTabActive: {
+    backgroundColor: '#1D4ED8',
   },
-  scanSubtitle: {
+  modeTabText: {
     fontSize: 12,
+    fontWeight: '600',
     color: '#94A3B8',
-    marginTop: 2,
-    lineHeight: 16,
   },
-  sectionHeader: {
+  modeTabTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  diagnosisHeroCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(56, 189, 248, 0.3)',
+  },
+  heroCardGradient: {
+    padding: 18,
+  },
+  heroTopRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.md,
+    marginBottom: 10,
+  },
+  scorePill: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 4,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+  scorePillNum: {
+    fontSize: 16,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  scorePillLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#94A3B8',
+  },
+  rescanBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+  },
+  rescanText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#38BDF8',
+  },
+  heroTitle: {
+    fontSize: 22,
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  heroSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  discountTagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+  },
+  discountTagText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#10B981',
+  },
+  sectionHeaderRow: {
+    marginBottom: 14,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
     color: '#F8FAFC',
+    marginBottom: 2,
   },
-  emptyCatalogCard: {
-    backgroundColor: '#131D33',
-    borderRadius: borderRadius.lg,
-    padding: spacing.xxl,
-    alignItems: 'center',
-    justifyContent: 'center',
+  sectionSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+  },
+  productCard: {
+    backgroundColor: '#0F1E3D',
+    borderRadius: 18,
+    padding: 16,
     borderWidth: 1,
     borderColor: '#1E293B',
+    marginBottom: 14,
   },
-  emptyCatalogTitle: {
+  productTopRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  stepBadge: {
+    backgroundColor: '#0A1329',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  stepBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#38BDF8',
+    letterSpacing: 0.8,
+  },
+  etaBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: 'rgba(56, 189, 248, 0.15)',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  etaText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#38BDF8',
+  },
+  brandName: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#94A3B8',
+    textTransform: 'uppercase',
+  },
+  productTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#F8FAFC',
-    marginTop: spacing.md,
-    marginBottom: 4,
+    marginBottom: 10,
   },
-  emptyCatalogSubtitle: {
-    fontSize: 13,
+  ingredientChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 14,
+  },
+  ingChip: {
+    backgroundColor: '#0A1329',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: 6,
+  },
+  ingText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#CBD5E1',
+  },
+  priceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: 6,
+  },
+  priceText: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#F8FAFC',
+  },
+  originalPriceText: {
+    fontSize: 12,
+    color: '#64748B',
+    textDecorationLine: 'line-through',
+  },
+  saveBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+  },
+  saveBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#10B981',
+  },
+  addBtn: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  addBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  addAllBtn: {
+    borderRadius: 14,
+    overflow: 'hidden',
+    marginVertical: 10,
+  },
+  addAllGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+  },
+  addAllText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  pricingNoteCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#0A1329',
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#1E293B',
+    marginTop: 8,
+  },
+  pricingNoteText: {
+    flex: 1,
+    fontSize: 11,
     color: '#94A3B8',
-    textAlign: 'center',
+    lineHeight: 16,
   },
 });

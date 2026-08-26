@@ -2,4 +2,6 @@
  * Face Scan & Diagnostics Feature Module
  */
 
-export interface ScanFeatureExports {}
+export * from './FaceScanScreen';
+export * from './ScanAnalysisScreen';
+export * from './SkinReportScreen';

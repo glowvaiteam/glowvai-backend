@@ -7,7 +7,7 @@ import {
   StatusBar,
   TouchableOpacity,
   Dimensions,
-  ActivityIndicator,
+  Easing,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -23,15 +23,29 @@ export interface WelcomeScreenProps {
 
 export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
   onFinish,
-  autoNavigateTimeoutMs = 2600,
+  autoNavigateTimeoutMs = 3500,
 }) => {
   const router = useRouter();
-  const { isLoaded, fontError, fontFamily } = useAppFonts();
+  const { isLoaded, fontFamily } = useAppFonts();
 
   // Entrance animations
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.94)).current;
-  const bottomFadeAnim = useRef(new Animated.Value(0)).current;
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const slideAnim = useRef(new Animated.Value(0)).current;
+  const spinAnim = useRef(new Animated.Value(0)).current;
+
+  // Continuous smooth spin animation for the modern bottom ring
+  useEffect(() => {
+    const spinLoop = Animated.loop(
+      Animated.timing(spinAnim, {
+        toValue: 1,
+        duration: 1200,
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
+    );
+    spinLoop.start();
+    return () => spinLoop.stop();
+  }, [spinAnim]);
 
   const handleProceed = () => {
     if (onFinish) {
@@ -39,125 +53,114 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       return;
     }
 
-    // Real Firebase Auth routing check
     const currentUser = getCurrentUser();
     if (currentUser) {
-      router.replace('/(customer)/(tabs)/index');
+      router.replace('/(customer)/(tabs)');
     } else {
       router.replace('/(auth)/login');
     }
   };
 
   useEffect(() => {
-    if (!isLoaded) return;
-
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        friction: 8,
-        tension: 40,
-        useNativeDriver: true,
-      }),
-      Animated.timing(bottomFadeAnim, {
-        toValue: 1,
-        duration: 1000,
-        delay: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
-
-    // Auto navigate after timeout
     const timer = setTimeout(() => {
       handleProceed();
     }, autoNavigateTimeoutMs);
 
     return () => clearTimeout(timer);
-  }, [isLoaded]);
+  }, []);
 
-  // Development error state if Syne font fails to load (Rule 5)
-  if (fontError) {
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorTitle}>Font Loading Failure</Text>
-        <Text style={styles.errorDescription}>
-          Failed to load the official Syne font family: {fontError.message}
-        </Text>
-      </View>
-    );
-  }
+  const spin = spinAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  // Safe font families with Android compatibility
+  const bunchFont = isLoaded && fontFamily ? fontFamily.bunchBold || fontFamily.bunchHeavy : undefined;
+  const syneFont = isLoaded && fontFamily ? fontFamily.syneExtraBold || fontFamily.syneBold : undefined;
 
   return (
     <TouchableOpacity
       activeOpacity={1}
-      onPress={isLoaded ? handleProceed : undefined}
+      onPress={handleProceed}
       style={styles.touchable}
       accessibilityRole="button"
       accessibilityLabel="Welcome to GlowVAI. Tap to continue."
     >
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-      {/* Blue to White Vertical Gradient matching exact reference */}
+      {/* Sky Blue to White Vertical Gradient matching exact reference */}
       <LinearGradient
         colors={[
-          '#1E78FF',
-          '#2563EB',
-          '#3B82F6',
-          '#60A5FA',
-          '#93C5FD',
-          '#BFDBFE',
-          '#DBEAFE',
-          '#EFF6FF',
-          '#F8FAFC',
           '#FFFFFF',
+          '#FFFFFF',
+          '#F8FAFC',
+          '#F0F9FF',
+          '#E0F2FE',
+          '#BAE6FD',
+          '#7DD3FC',
+          '#38BDF8',
+          '#0284C7',
         ]}
-        locations={[0, 0.12, 0.28, 0.45, 0.62, 0.75, 0.84, 0.92, 0.97, 1.0]}
+        locations={[0, 0.2, 0.35, 0.48, 0.6, 0.72, 0.82, 0.92, 1.0]}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
         style={styles.gradient}
       >
-        {/* Centered Brand Mark with loaded Syne font */}
-        <View style={styles.centerContainer}>
-          {isLoaded && fontFamily ? (
-            <Animated.View
-              style={[
-                styles.logoContainer,
-                {
-                  opacity: fadeAnim,
-                  transform: [{ scale: scaleAnim }],
-                },
-              ]}
-            >
-              <Text
-                style={[
-                  styles.brandTitle,
-                  { fontFamily: fontFamily.syneExtraBold },
-                ]}
-                accessibilityRole="header"
-              >
-                glowvai
-              </Text>
-            </Animated.View>
-          ) : (
-            <ActivityIndicator size="small" color="#0A1128" />
-          )}
-        </View>
-
-        {/* Bottom Made in India Badge */}
+        {/* Top/Mid Section: Bold "Welcome,\nmate" Typography in Bunch Font */}
         <Animated.View
           style={[
-            styles.bottomContainer,
+            styles.textContainer,
             {
-              opacity: isLoaded ? bottomFadeAnim : 0,
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
             },
           ]}
         >
-          <Text style={styles.madeInIndiaText}>MADE IN INDIA</Text>
+          <Text
+            style={[
+              styles.welcomeTitle,
+              bunchFont ? { fontFamily: bunchFont } : { fontWeight: '800' },
+            ]}
+          >
+            Welcome,
+          </Text>
+          <Text
+            style={[
+              styles.mateTitle,
+              bunchFont ? { fontFamily: bunchFont } : { fontWeight: '800' },
+            ]}
+          >
+            mate
+          </Text>
         </Animated.View>
+
+        {/* Bottom Section: Modern Loading Arc & Centered "glowvai" in Syne Font */}
+        <View style={styles.bottomSection}>
+          {/* Animated Spinner Arc */}
+          <Animated.View
+            style={[
+              styles.spinnerArc,
+              {
+                transform: [{ rotate: spin }],
+              },
+            ]}
+          />
+
+          {/* Centered Brand Mark in Loaded Syne Font (strictly lowercase "glowvai") */}
+          <View style={styles.brandRow}>
+            <Text
+              style={[
+                styles.brandTitle,
+                syneFont ? { fontFamily: syneFont } : { fontWeight: '800' },
+              ]}
+              accessibilityRole="header"
+            >
+              glowvai
+            </Text>
+          </View>
+
+          <Text style={styles.madeInIndiaText}>MADE IN INDIA</Text>
+        </View>
       </LinearGradient>
     </TouchableOpacity>
   );
@@ -172,54 +175,55 @@ const styles = StyleSheet.create({
     width: width,
     height: height,
     justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingHorizontal: 36,
   },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  textContainer: {
+    marginTop: height * 0.26,
+    alignItems: 'flex-start',
   },
-  logoContainer: {
+  welcomeTitle: {
+    fontSize: 54,
+    color: '#0F172A',
+    letterSpacing: -1.5,
+    lineHeight: 60,
+  },
+  mateTitle: {
+    fontSize: 54,
+    color: '#0F172A',
+    letterSpacing: -1.5,
+    lineHeight: 60,
+  },
+  bottomSection: {
+    alignItems: 'center',
+    paddingBottom: 48,
+  },
+  spinnerArc: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    borderWidth: 3.5,
+    borderColor: 'transparent',
+    borderTopColor: '#0F172A',
+    borderRightColor: '#0F172A',
+    marginBottom: 20,
+  },
+  brandRow: {
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 8,
   },
   brandTitle: {
-    fontSize: 52,
-    fontWeight: '800',
-    color: '#0A1128',
-    letterSpacing: -1.5,
+    fontSize: 28,
+    color: '#0F172A',
+    letterSpacing: -0.5,
     textAlign: 'center',
     includeFontPadding: false,
   },
-  bottomContainer: {
-    paddingBottom: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   madeInIndiaText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '700',
-    color: '#7D93B2',
-    letterSpacing: 4.5,
+    color: 'rgba(15, 23, 42, 0.55)',
+    letterSpacing: 3.5,
     textAlign: 'center',
-  },
-  errorContainer: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  errorTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#EF4444',
-    marginBottom: 12,
-  },
-  errorDescription: {
-    fontSize: 14,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 20,
   },
 });
