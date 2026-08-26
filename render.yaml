@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: glowvai-cnn-backend
+    name: glowvai-backend
     runtime: python
     region: oregon
     plan: free
