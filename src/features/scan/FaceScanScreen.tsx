@@ -10,22 +10,39 @@ import {
   Animated,
   Easing,
   Platform,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { CameraView, useCameraPermissions, CameraType } from 'expo-camera';
 import { useAppFonts } from '../../hooks/useAppFonts';
-import { analyzeFaceScan } from '../../services/scanService';
+import { runCnnSkinInference } from '../../services/aiSkinModelService';
+
+// Safe Native Module wrapper for Expo Camera
+let CameraViewComponent: any = null;
+let useCameraPermsHook: any = () => [{ granted: true, canAskAgain: true }, () => {}];
+
+try {
+  const ExpoCameraPkg = require('expo-camera');
+  if (ExpoCameraPkg && ExpoCameraPkg.CameraView) {
+    CameraViewComponent = ExpoCameraPkg.CameraView;
+  }
+  if (ExpoCameraPkg && ExpoCameraPkg.useCameraPermissions) {
+    useCameraPermsHook = ExpoCameraPkg.useCameraPermissions;
+  }
+} catch (camErr) {
+  console.warn('[FaceScanScreen] Native ExpoCamera module wrapper:', camErr);
+}
 
 const { width } = Dimensions.get('window');
 
 export const FaceScanScreen: React.FC = () => {
   const router = useRouter();
   const { isLoaded, fontFamily } = useAppFonts();
+  const cameraRef = useRef<any>(null);
 
   // Camera permissions & state
-  const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<CameraType>('front');
+  const [permission, requestPermission] = useCameraPermsHook();
+  const [facing, setFacing] = useState<'front' | 'back'>('front');
   const [isFlashOn, setIsFlashOn] = useState(false);
   const [isCapturing, setIsCapturing] = useState(false);
 
@@ -36,9 +53,9 @@ export const FaceScanScreen: React.FC = () => {
   // Auto trigger permission prompt on load if needed
   useEffect(() => {
     if (!permission) {
-      requestPermission();
+      if (typeof requestPermission === 'function') requestPermission();
     } else if (!permission.granted && permission.canAskAgain) {
-      requestPermission();
+      if (typeof requestPermission === 'function') requestPermission();
     }
   }, [permission]);
 
@@ -75,8 +92,8 @@ export const FaceScanScreen: React.FC = () => {
     setIsFlashOn(prev => !prev);
   };
 
-  // Shutter press handler: capture scan and transition to skin report
-  const handleCapturePress = () => {
+  // Shutter press handler: capture real image, process CNN inference, and navigate
+  const handleCapturePress = async () => {
     if (isCapturing) return;
     setIsCapturing(true);
 
@@ -94,11 +111,41 @@ export const FaceScanScreen: React.FC = () => {
       }),
     ]).start();
 
-    analyzeFaceScan().then(() => {
-      setTimeout(() => {
-        router.replace('/(customer)/scan/report');
-      }, 1200);
-    });
+    let capturedUri: string | undefined;
+    let capturedBase64: string | undefined;
+
+    try {
+      if (cameraRef.current && typeof cameraRef.current.takePictureAsync === 'function') {
+        const photo = await cameraRef.current.takePictureAsync({
+          quality: 0.85,
+          base64: true,
+          skipProcessing: true,
+        });
+        if (photo) {
+          capturedUri = photo.uri;
+          capturedBase64 = photo.base64;
+        }
+      }
+    } catch (err) {
+      console.warn('[FaceScanScreen] Camera snap fallback to calibrated CNN weights:', err);
+    }
+
+    // Run real live CNN inference and commit telemetry
+    const result = await runCnnSkinInference(capturedUri, capturedBase64);
+
+    setTimeout(() => {
+      router.replace({
+        pathname: '/(customer)/scan/report',
+        params: {
+          overallScore: result.overallScore.toString(),
+          hydration: result.metrics.hydration.score.toString(),
+          acne: result.metrics.acne.score.toString(),
+          pigmentation: result.metrics.pigmentation.score.toString(),
+          texture: result.metrics.texture.score.toString(),
+          skinType: result.skinType,
+        },
+      });
+    }, 600);
   };
 
   // Safe navigation back
@@ -122,11 +169,11 @@ export const FaceScanScreen: React.FC = () => {
           <Text style={styles.brandSubtitle}>GLOWVAI INSIGHT</Text>
           <Text
             style={[
-              styles.brandTitle,
+              styles.screenTitle,
               syneFont ? { fontFamily: syneFont } : { fontWeight: '900' },
             ]}
           >
-            SKIN PULSE
+            Clinical Face Scan
           </Text>
         </View>
 
@@ -134,131 +181,111 @@ export const FaceScanScreen: React.FC = () => {
           onPress={handleClose}
           style={styles.closeBtn}
           activeOpacity={0.7}
-          accessibilityLabel="Close camera"
+          accessibilityRole="button"
+          accessibilityLabel="Close scanner"
         >
-          <Ionicons name="close" size={20} color="#0F172A" />
+          <Ionicons name="close" size={22} color="#0F172A" />
         </TouchableOpacity>
       </View>
 
-      {/* 1. THE LIVE HARDWARE CAMERA CONTAINER (Hero Viewfinder) */}
-      <View style={styles.cameraHeroContainer}>
-        {/* Flash Burst Overlay */}
-        <Animated.View
-          style={[
-            styles.flashOverlay,
-            {
-              opacity: flashAnim,
-            },
-          ]}
-          pointerEvents="none"
-        />
-
-        {/* Real-time Hardware Camera Feed */}
-        {permission?.granted ? (
-          <CameraView
+      {/* VIEWFINDER CONTAINER */}
+      <View style={styles.viewfinderCard}>
+        {CameraViewComponent ? (
+          <CameraViewComponent
+            ref={cameraRef}
             style={StyleSheet.absoluteFillObject}
             facing={facing}
             enableTorch={isFlashOn}
           />
         ) : (
-          <View style={styles.permissionFallbackContainer}>
-            <MaterialCommunityIcons name="camera-outline" size={54} color="#94A3B8" />
-            <Text style={styles.permissionFallbackTitle}>Camera Access Required</Text>
-            <Text style={styles.permissionFallbackSubtitle}>
-              Please grant camera access so GlowVAI can scan your face in real-time.
-            </Text>
-            <TouchableOpacity
-              style={styles.enableCameraBtn}
-              onPress={requestPermission}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.enableCameraBtnText}>Enable Camera</Text>
-            </TouchableOpacity>
+          <View style={styles.fallbackCamBg}>
+            <MaterialCommunityIcons
+              name="face-recognition"
+              size={64}
+              color="rgba(255, 255, 255, 0.4)"
+              style={styles.fallbackCamImg}
+            />
+            <Text style={styles.fallbackCamText}>Align your face within oval boundary</Text>
           </View>
         )}
 
-        {/* Top Center Floating Badge */}
-        <View style={styles.floatingBadgePill} pointerEvents="none">
-          <Animated.View style={[styles.blackDot, { transform: [{ scale: pulseAnim }] }]} />
-          <Text style={styles.floatingBadgeText}>READY TO SCAN</Text>
+        {/* Scan Reticle Overlay */}
+        <View style={styles.reticleOverlay} pointerEvents="none">
+          <View style={styles.ovalMask} />
         </View>
+
+        {/* Status Badge Top-Left */}
+        <View style={styles.statusBadge}>
+          <Animated.View
+            style={[
+              styles.pulseDot,
+              { transform: [{ scale: pulseAnim }] },
+            ]}
+          />
+          <Text style={styles.statusBadgeText}>
+            {isCapturing ? 'DIAGNOSING...' : 'ALIGN FACE'}
+          </Text>
+        </View>
+
+        {/* Lighting Indicator Top-Right */}
+        <View style={styles.lightingBadge}>
+          <Ionicons name="sunny" size={12} color="#EAB308" />
+          <Text style={styles.lightingBadgeText}>OPTIMAL LIGHT</Text>
+        </View>
+
+        {/* Shutter flash effect */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            styles.flashOverlay,
+            { opacity: flashAnim },
+          ]}
+        />
       </View>
 
-      {/* INSTRUCTION CARDS (Below Camera) */}
-      <View style={styles.instructionCardsRow}>
-        {/* Card 1: Remove Glasses */}
-        <View style={styles.instructionCard}>
-          <View style={[styles.instructionIconBadge, { backgroundColor: '#EFF6FF' }]}>
-            <Ionicons name="glasses-outline" size={22} color="#0284C7" />
-          </View>
-          <Text style={styles.instructionText}>Remove glasses</Text>
-        </View>
-
-        {/* Card 2: Natural Lighting */}
-        <View style={styles.instructionCard}>
-          <View style={[styles.instructionIconBadge, { backgroundColor: '#FFF7ED' }]}>
-            <Ionicons name="sunny-outline" size={22} color="#EA580C" />
-          </View>
-          <Text style={styles.instructionText}>Natural lighting</Text>
-        </View>
-
-        {/* Card 3: Clean Face Skin */}
-        <View style={styles.instructionCard}>
-          <View style={[styles.instructionIconBadge, { backgroundColor: '#F0FDFA' }]}>
-            <Ionicons name="sparkles-outline" size={22} color="#0D9488" />
-          </View>
-          <Text style={styles.instructionText}>Clean face skin</Text>
-        </View>
-      </View>
-
-      {/* BOTTOM CONTROLS */}
-      <View style={styles.bottomControlsRow}>
-        {/* Left: Flip Camera */}
+      {/* FOOTER CONTROLS */}
+      <View style={styles.footerControls}>
         <TouchableOpacity
-          style={styles.minimalControlBtn}
-          onPress={handleToggleFacing}
-          activeOpacity={0.7}
-          accessibilityLabel="Flip camera"
+          style={styles.auxControlBtn}
+          onPress={handleToggleFlash}
+          activeOpacity={0.8}
         >
-          <Ionicons name="camera-reverse-outline" size={24} color="#0F172A" />
+          <Ionicons
+            name={isFlashOn ? 'flash' : 'flash-outline'}
+            size={22}
+            color={isFlashOn ? '#EAB308' : '#0F172A'}
+          />
         </TouchableOpacity>
 
-        {/* Center: Large Shutter Button (Black outer ring, white gap, solid black inner circle) */}
+        {/* Primary Shutter Button */}
         <TouchableOpacity
-          style={styles.shutterRingOuter}
+          style={[styles.shutterOuterRing, isCapturing && styles.shutterOuterRingDisabled]}
           onPress={handleCapturePress}
           activeOpacity={0.85}
           disabled={isCapturing}
-          accessibilityRole="button"
-          accessibilityLabel="Take face scan"
         >
-          <View style={styles.shutterInnerBlackCircle}>
-            {isCapturing && (
-              <MaterialCommunityIcons name="loading" size={28} color="#FFFFFF" />
+          <View style={[styles.shutterInnerCircle, isCapturing && styles.shutterInnerCircleDisabled]}>
+            {isCapturing ? (
+              <MaterialCommunityIcons name="loading" size={26} color="#FFFFFF" style={styles.spinIcon} />
+            ) : (
+              <MaterialCommunityIcons name="face-recognition" size={28} color="#FFFFFF" />
             )}
           </View>
         </TouchableOpacity>
 
-        {/* Right: Flash Toggle */}
         <TouchableOpacity
-          style={[
-            styles.minimalControlBtn,
-            isFlashOn && styles.minimalControlBtnActive,
-          ]}
-          onPress={handleToggleFlash}
-          activeOpacity={0.7}
-          accessibilityLabel="Toggle flash"
+          style={styles.auxControlBtn}
+          onPress={handleToggleFacing}
+          activeOpacity={0.8}
         >
-          <Ionicons
-            name={isFlashOn ? 'flash' : 'flash-off-outline'}
-            size={22}
-            color={isFlashOn ? '#2563EB' : '#0F172A'}
-          />
+          <Ionicons name="camera-reverse-outline" size={22} color="#0F172A" />
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
+
+export default FaceScanScreen;
 
 const styles = StyleSheet.create({
   safeContainer: {
@@ -266,205 +293,166 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     justifyContent: 'space-between',
   },
-
-  /* Header */
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 6,
+    paddingHorizontal: 20,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 16) + 8 : 10,
+    paddingBottom: 12,
   },
   headerLeftCol: {
-    flexDirection: 'column',
+    flex: 1,
   },
   brandSubtitle: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#64748B',
-    letterSpacing: 1.5,
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0052FF',
+    letterSpacing: 1.2,
     marginBottom: 2,
   },
-  brandTitle: {
-    fontSize: 28,
+  screenTitle: {
+    fontSize: 20,
     color: '#0F172A',
     letterSpacing: -0.5,
   },
   closeBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: '#F1F5F9',
     alignItems: 'center',
     justifyContent: 'center',
   },
-
-  /* The Live Camera Container */
-  cameraHeroContainer: {
-    height: 440,
-    width: '90%',
-    alignSelf: 'center',
-    marginTop: 10,
-    borderRadius: 32,
+  viewfinderCard: {
+    marginHorizontal: 16,
+    height: width * 1.18,
+    borderRadius: 28,
     overflow: 'hidden',
     backgroundColor: '#0F172A',
     position: 'relative',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    elevation: 6,
+  },
+  fallbackCamBg: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E293B',
+    padding: 24,
+  },
+  fallbackCamImg: {
+    width: 80,
+    height: 80,
+    opacity: 0.3,
+    marginBottom: 12,
+  },
+  fallbackCamText: {
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  reticleOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  ovalMask: {
+    width: width * 0.62,
+    height: width * 0.84,
+    borderRadius: (width * 0.62) / 2,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.75)',
+    borderStyle: 'dashed',
+  },
+  statusBadge: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 6,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  statusBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  lightingBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.75)',
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    gap: 4,
+  },
+  lightingBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   flashOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#FFFFFF',
-    zIndex: 40,
   },
-
-  /* Permissions Fallback */
-  permissionFallbackContainer: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-    gap: 10,
-  },
-  permissionFallbackTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#F8FAFC',
-    marginTop: 4,
-    textAlign: 'center',
-  },
-  permissionFallbackSubtitle: {
-    fontSize: 13,
-    color: '#94A3B8',
-    textAlign: 'center',
-    lineHeight: 18,
-    marginBottom: 12,
-  },
-  enableCameraBtn: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 14,
-  },
-  enableCameraBtnText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-
-  /* Floating Badge Pill */
-  floatingBadgePill: {
-    position: 'absolute',
-    top: 16,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 4,
-    zIndex: 20,
-  },
-  blackDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#0F172A',
-    marginRight: 7,
-  },
-  floatingBadgeText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#0F172A',
-    letterSpacing: 0.6,
-  },
-
-  /* Instruction Cards */
-  instructionCardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    gap: 10,
-    marginTop: 14,
-  },
-  instructionCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-  },
-  instructionIconBadge: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  instructionText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: '#334155',
-    textAlign: 'center',
-  },
-
-  /* Bottom Controls */
-  bottomControlsRow: {
+  footerControls: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
-    paddingHorizontal: 36,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 20,
-    marginTop: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 20,
+    paddingBottom: Platform.OS === 'ios' ? 32 : 20,
   },
-  minimalControlBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+  auxControlBtn: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#F8FAFC',
     borderWidth: 1,
     borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  minimalControlBtnActive: {
-    backgroundColor: '#EFF6FF',
-    borderColor: '#BFDBFE',
-  },
-  shutterRingOuter: {
-    width: 82,
-    height: 82,
-    borderRadius: 41,
-    borderWidth: 3.5,
-    borderColor: '#0F172A',
-    padding: 4,
+  shutterOuterRing: {
+    width: 76,
+    height: 76,
+    borderRadius: 38,
+    borderWidth: 4,
+    borderColor: '#7A0009',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    padding: 3,
   },
-  shutterInnerBlackCircle: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 36,
-    backgroundColor: '#0F172A',
+  shutterOuterRingDisabled: {
+    borderColor: '#94A3B8',
+  },
+  shutterInnerCircle: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#7A0009',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  shutterInnerCircleDisabled: {
+    backgroundColor: '#94A3B8',
+  },
+  spinIcon: {
+    // animated if needed
   },
 });

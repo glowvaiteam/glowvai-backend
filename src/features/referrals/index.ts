@@ -2,4 +2,4 @@
  * Referrals & Rewards Feature Module
  */
 
-export interface ReferralsFeatureExports {}
+export * from './StudentReferralScreen';

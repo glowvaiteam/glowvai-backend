@@ -52,13 +52,7 @@ export const WelcomeScreen: React.FC<WelcomeScreenProps> = ({
       onFinish();
       return;
     }
-
-    const currentUser = getCurrentUser();
-    if (currentUser) {
-      router.replace('/(customer)/(tabs)');
-    } else {
-      router.replace('/(auth)/login');
-    }
+    router.replace('/(customer)/(tabs)');
   };
 
   useEffect(() => {

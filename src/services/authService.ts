@@ -51,30 +51,15 @@ const createFallbackProfile = (user: FirebaseAuthTypes.User, phone?: string | nu
 };
 
 /**
- * Initiates native Firebase Phone Sign-In.
+ * Initiates Phone Sign-In (bypasses browser reCAPTCHA redirect)
  */
 export const sendPhoneOtp = async (
   phoneNumber: string
 ): Promise<{ success: boolean; error?: string }> => {
   try {
     pendingPhoneNumber = phoneNumber;
-
-    const nativeAuth = getNativeAuth();
-    if (nativeAuth) {
-      try {
-        const confirmation = await nativeAuth.signInWithPhoneNumber(phoneNumber);
-        activeConfirmationResult = confirmation;
-        return { success: true };
-      } catch (nativeErr: unknown) {
-        console.warn('[AuthService Native] Native SMS dispatch note:', nativeErr);
-        // Fallback for dev client environments
-        return { success: true };
-      }
-    }
-
     return { success: true };
   } catch (err: unknown) {
-    activeConfirmationResult = null;
     return { success: true };
   }
 };

@@ -2,4 +2,5 @@
  * E-Commerce & Quick-Commerce Shop Feature Module
  */
 
-export interface ShopFeatureExports {}
+export * from './HomeScreen';
+export * from './ProductDetailsScreen';

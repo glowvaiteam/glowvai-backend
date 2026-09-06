@@ -1,0 +1,44 @@
+{
+  "$schema": "https://impeccable.style/schema.json",
+  "project": "GlowVAI V2",
+  "version": "2.0.0",
+  "framework": "react-native-expo",
+  "theme": {
+    "colors": {
+      "primary": "#00C853",
+      "primaryDark": "#15803D",
+      "background": "#F8FAFC",
+      "surface": "#FFFFFF",
+      "text": "#0F172A",
+      "textMuted": "#64748B",
+      "accent": "#F0FDF4",
+      "border": "#E2E8F0",
+      "warning": "#F59E0B",
+      "danger": "#EF4444"
+    },
+    "typography": {
+      "fontFamily": "System",
+      "scale": {
+        "display": 24,
+        "h1": 18,
+        "h2": 15,
+        "body": 13,
+        "caption": 11
+      }
+    },
+    "spacing": [4, 8, 12, 16, 20, 24, 32],
+    "borderRadius": {
+      "sm": 6,
+      "md": 10,
+      "lg": 14,
+      "xl": 20,
+      "full": 9999
+    }
+  },
+  "rules": {
+    "noGenericAIPurpleGradients": true,
+    "strictContrast": true,
+    "minTouchTargetSize": 44,
+    "maxPrimaryActionsPerView": 1
+  }
+}

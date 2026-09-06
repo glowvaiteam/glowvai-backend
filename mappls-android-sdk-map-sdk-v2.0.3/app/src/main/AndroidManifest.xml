@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.MapplsMapDemo"
+        tools:targetApi="31">
+        <activity
+            android:name=".activity.utility.DigipinActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.geofence.GeoFenceCustomActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.geofence.GeoFenceDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.feedbackUi.FeedbackWidgetActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.FeedbackUiActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.NearbyWidgetActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.geofence.BasicGeoFenceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.GeoFenceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.autocomplete.FullModeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.autocomplete.CardModeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.autocomplete.FullModeFragmentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.autocomplete.CardModeFragmentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.animation.TrackingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.animation.MarkerRotationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.animation.CarAnimationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.location.CustomCurrentLocationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.location.CurrentLocationActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.MapplsPinCustomMarkerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.MapplsPinMarkerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.AddCustomMarkerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.camera.MapplsPinCameraActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.layers.GeoAnalyticsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.camera.LocationCameraActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.camera.CameraActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.AutoCompleteWidgetActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.DirectionWidgetActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.widgets.PlacePickerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.MarkerDraggingActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.AddMultipleMarkerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.ClusterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.CustomClusterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.AddCustomInfoWindowActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.AddMarkerActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.polyline.SemiCirclePolylineActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.polyline.PolygonActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.polyline.SnakeMotionPolylineActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.polyline.GradientPolylineActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.polyline.AddPolylineActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.layers.IndoorActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.layers.HeatMapActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.marker.MarkerViewActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.utility.DirectionStepActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.layers.ScalebarActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.layers.DrivingRangeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.PlaceClickActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.NearbyReportActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.PlaceDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.HateOsNearbyActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.TrafficActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.StyleActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.GestureActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.PoiAlongRouteActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.PredectiveDistanceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.DistanceActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.MapLongClickActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.PredictiveDirectionActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.MapClickActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.events.MapFragmentActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.DirectionsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.ReverseGeocodeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.GeocodeActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.NearbyActivity"
+            android:exported="false" />
+        <activity
+            android:name=".activity.restapis.AutoSuggestActivity"
+            android:exported="false" />
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>

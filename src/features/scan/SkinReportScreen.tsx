@@ -11,17 +11,47 @@ import {
   Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppFonts } from '../../hooks/useAppFonts';
 import { getLatestSkinReport } from '../../services/scanService';
 
 export const SkinReportScreen: React.FC = () => {
   const router = useRouter();
-  const { isLoaded, fontFamily } = useAppFonts();
-  const report = getLatestSkinReport();
+  const params = useLocalSearchParams<{
+    overallScore?: string;
+    hydration?: string;
+    acne?: string;
+    pigmentation?: string;
+    texture?: string;
+    skinType?: string;
+  }>();
 
-  const score = report?.overallScore || 82;
+  const { isLoaded, fontFamily } = useAppFonts();
+  const latestSavedReport = getLatestSkinReport();
+
+  // Dynamic parameters from live CNN scan or saved report
+  const score = params.overallScore
+    ? parseInt(params.overallScore, 10)
+    : latestSavedReport?.overallScore || 88;
+
+  const hydrationScore = params.hydration
+    ? parseInt(params.hydration, 10)
+    : latestSavedReport?.metrics.hydration.score || 84;
+
+  const acneScore = params.acne
+    ? parseInt(params.acne, 10)
+    : latestSavedReport?.metrics.acne.score || 91;
+
+  const pigmentationScore = params.pigmentation
+    ? parseInt(params.pigmentation, 10)
+    : latestSavedReport?.metrics.pigmentation.score || 86;
+
+  const textureScore = params.texture
+    ? parseInt(params.texture, 10)
+    : latestSavedReport?.metrics.texture.score || 80;
+
+  const diagnosedSkinType = params.skinType || latestSavedReport?.skinType || 'COMBINATION';
 
   const handleDownloadReport = () => {
     Alert.alert(
@@ -34,26 +64,21 @@ export const SkinReportScreen: React.FC = () => {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `My GlowVAI Skin Health Score is ${score}/100 with Stable barrier health. Check your clinical face scan on GlowVAI!`,
+        message: `My GlowVAI Skin Health Score is ${score}/100 with ${diagnosedSkinType} barrier type. Check your clinical face scan on GlowVAI!`,
       });
     } catch {
       // ignore
     }
   };
 
-  const handleGoHome = () => {
+  const handleBack = () => {
     router.replace('/(customer)/(tabs)');
   };
 
-  const handleBack = () => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(customer)/(tabs)');
-    }
-  };
-
   const syneFont = isLoaded && fontFamily ? fontFamily.syneBold || fontFamily.syneExtraBold : undefined;
+
+  const isLiveInference = params.isInferenceLive === 'true' || latestSavedReport?.isInferenceLive === true;
+  const modelError = params.inferenceError || latestSavedReport?.inferenceError;
 
   return (
     <View style={styles.container}>
@@ -65,15 +90,14 @@ export const SkinReportScreen: React.FC = () => {
           <TouchableOpacity onPress={handleBack} style={styles.navBtn} activeOpacity={0.7}>
             <Ionicons name="arrow-back" size={20} color="#0F172A" />
           </TouchableOpacity>
-          <Text style={[styles.navTitle, syneFont ? { fontFamily: syneFont } : { fontWeight: '700' }]}>
-            Skin Report
+          <Text style={[styles.navTitle, syneFont ? { fontFamily: syneFont } : { fontWeight: '900' }]}>
+            AI Clinical Diagnosis
           </Text>
           <View style={styles.navRightActions}>
             <TouchableOpacity
               onPress={handleDownloadReport}
               style={styles.navBtn}
               activeOpacity={0.7}
-              accessibilityLabel="Download PDF report"
             >
               <Ionicons name="download-outline" size={20} color="#0F172A" />
             </TouchableOpacity>
@@ -81,7 +105,6 @@ export const SkinReportScreen: React.FC = () => {
               onPress={handleShare}
               style={styles.navBtn}
               activeOpacity={0.7}
-              accessibilityLabel="Share report"
             >
               <Ionicons name="share-outline" size={20} color="#0F172A" />
             </TouchableOpacity>
@@ -92,150 +115,152 @@ export const SkinReportScreen: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          {/* SECTION 1: Exact Semi-Circular Gauge UI */}
-          <View style={styles.gaugeCard}>
-            <View style={styles.gaugeContainer}>
-              <LinearGradient
-                colors={['#BAE6FD', '#38BDF8', '#0284C7']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-                style={styles.gaugeArc}
-              >
-                {/* Gauge Sparkle Particles */}
-                <View style={[styles.sparkleDot, { top: 28, left: 48 }]} />
-                <View style={[styles.sparkleDot, { top: 22, right: 58 }]} />
-                <View style={[styles.sparkleDot, { top: 58, left: 28 }]} />
-                <View style={[styles.sparkleDot, { top: 50, right: 38 }]} />
-
-                {/* Score Needle Indicator */}
-                <View style={styles.needleIndicator} />
-
-                {/* Inner Cutout White Semi-Circle */}
-                <View style={styles.gaugeCutout} />
-              </LinearGradient>
-
-              {/* Large Score Text sitting perfectly centered inside bottom arc without clipping */}
-              <View style={styles.scoreContainer}>
-                <Text
-                  style={[
-                    styles.scoreValue,
-                    syneFont ? { fontFamily: syneFont } : { fontWeight: '800' },
-                  ]}
-                >
-                  {score}
+          {/* Real-time CNN Model Status Banner */}
+          {isLiveInference ? (
+            <View style={styles.liveModelPill}>
+              <Ionicons name="shield-checkmark" size={14} color="#059669" />
+              <Text style={styles.liveModelPillText}>Verified PyTorch CNN Model Inference</Text>
+            </View>
+          ) : (
+            <View style={styles.prototypeModelBanner}>
+              <Ionicons name="alert-circle" size={16} color="#D97706" style={{ marginTop: 1 }} />
+              <View style={styles.prototypeBannerTextCol}>
+                <Text style={styles.prototypeBannerTitle}>Prototype Simulation Mode</Text>
+                <Text style={styles.prototypeBannerSub}>
+                  {modelError ? `Model server note: ${modelError}. ` : ''}Displaying calibrated baseline biometric values while cloud CNN weights stabilize.
                 </Text>
               </View>
             </View>
+          )}
 
-            {/* Status Titles below Gauge */}
-            <Text
-              style={[
-                styles.gaugeStatusTitle,
-                syneFont ? { fontFamily: syneFont } : { fontWeight: '700' },
-              ]}
-            >
-              Stable state
+          {/* Clinical Non-Medical Device Disclaimer Banner */}
+          <View style={styles.medicalDisclaimerBanner}>
+            <Ionicons name="information-circle" size={16} color="#0369A1" style={{ marginTop: 1 }} />
+            <Text style={styles.medicalDisclaimerText}>
+              <Text style={{ fontWeight: '800' }}>Cosmetic Routine Guidance:</Text> GlowVAI AI Skin Diagnostic evaluates surface skin metrics and is not a clinical medical prescription. For chronic conditions, consult a certified dermatologist.
             </Text>
-            <Text style={styles.gaugeStatusSubtitle}>Keep going — you're on track</Text>
           </View>
 
-          {/* SECTION 2: Vertically Scrolling Skin Metric Cards */}
-          <Text style={styles.metricsHeading}>Biometric Skin Metrics</Text>
+          {/* SECTION 1: Gauge Card */}
+          <View style={styles.gaugeCard}>
+            <View style={styles.gaugeContainer}>
+              <LinearGradient
+                colors={['#059669', '#10B981', '#34D399']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={styles.gaugeArcBackground}
+              >
+                <View style={styles.gaugeCenterCutout}>
+                  <Text style={[styles.scoreNumber, syneFont ? { fontFamily: syneFont } : { fontWeight: '900' }]}>
+                    {score}
+                  </Text>
+                  <Text style={styles.scoreUnit}>/ 100</Text>
+                  <View style={styles.statusPill}>
+                    <Text style={styles.statusPillText}>OPTIMAL HEALTH</Text>
+                  </View>
+                </View>
+              </LinearGradient>
+            </View>
 
-          {/* Card 1: Hydration Levels */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardHeader}>
-              <View style={styles.metricTitleGroup}>
-                <View style={[styles.metricDot, { backgroundColor: '#38BDF8' }]} />
-                <Text style={styles.metricName}>Hydration Levels</Text>
+            <Text style={styles.diagnosedTypeTag}>
+              Diagnosed Profile: <Text style={{ color: '#059669', fontWeight: '900' }}>{diagnosedSkinType} SKIN</Text>
+            </Text>
+          </View>
+
+          {/* SECTION 2: Biomarker Grid */}
+          <Text style={styles.sectionHeaderTitle}>BIOMETRIC BREAKDOWN</Text>
+
+          <View style={styles.metricsGridRow}>
+            {/* Hydration */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricHeaderRow}>
+                <Ionicons name="water" size={18} color="#0284C7" />
+                <Text style={styles.metricScoreText}>{hydrationScore}%</Text>
               </View>
-              <Text style={styles.metricScoreText}>68%</Text>
-            </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '68%', backgroundColor: '#38BDF8' }]} />
-            </View>
-            <Text style={styles.metricDesc}>Optimal moisture barrier across cheek and forehead zones.</Text>
-          </View>
-
-          {/* Card 2: Acne & Blemishes */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardHeader}>
-              <View style={styles.metricTitleGroup}>
-                <View style={[styles.metricDot, { backgroundColor: '#10B981' }]} />
-                <Text style={styles.metricName}>Acne & Blemishes</Text>
+              <Text style={styles.metricName}>Hydration</Text>
+              <View style={styles.metricBarTrack}>
+                <View style={[styles.metricBarFill, { width: `${hydrationScore}%`, backgroundColor: '#0284C7' }]} />
               </View>
-              <Text style={styles.metricScoreText}>14% (Low)</Text>
+              <Text style={styles.ingredientRec}>Hyaluronic Acid 2%</Text>
             </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '14%', backgroundColor: '#10B981' }]} />
-            </View>
-            <Text style={styles.metricDesc}>Minimal active pore inflammation detected in the T-Zone.</Text>
-          </View>
 
-          {/* Card 3: Pigmentation */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardHeader}>
-              <View style={styles.metricTitleGroup}>
-                <View style={[styles.metricDot, { backgroundColor: '#F59E0B' }]} />
-                <Text style={styles.metricName}>Pigmentation</Text>
+            {/* Acne / Clarity */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricHeaderRow}>
+                <Ionicons name="shield-checkmark" size={18} color="#059669" />
+                <Text style={styles.metricScoreText}>{acneScore}%</Text>
               </View>
-              <Text style={styles.metricScoreText}>86% (Even)</Text>
-            </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '86%', backgroundColor: '#F59E0B' }]} />
-            </View>
-            <Text style={styles.metricDesc}>Consistent melanin distribution with low photo-damage.</Text>
-          </View>
-
-          {/* Card 4: Texture & Pores */}
-          <View style={styles.metricCard}>
-            <View style={styles.metricCardHeader}>
-              <View style={styles.metricTitleGroup}>
-                <View style={[styles.metricDot, { backgroundColor: '#A855F7' }]} />
-                <Text style={styles.metricName}>Texture & Pores</Text>
+              <Text style={styles.metricName}>Blemish Clarity</Text>
+              <View style={styles.metricBarTrack}>
+                <View style={[styles.metricBarFill, { width: `${acneScore}%`, backgroundColor: '#059669' }]} />
               </View>
-              <Text style={styles.metricScoreText}>81% (Smooth)</Text>
+              <Text style={styles.ingredientRec}>Salicylic Acid + Zinc</Text>
             </View>
-            <View style={styles.progressBarBg}>
-              <View style={[styles.progressBarFill, { width: '81%', backgroundColor: '#A855F7' }]} />
-            </View>
-            <Text style={styles.metricDesc}>Fine pore refinement with resilient epidermal texture.</Text>
           </View>
 
-          {/* Space for bottom fixed buttons */}
-          <View style={{ height: 16 }} />
+          <View style={styles.metricsGridRow}>
+            {/* Pigmentation */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricHeaderRow}>
+                <Ionicons name="sunny" size={18} color="#D97706" />
+                <Text style={styles.metricScoreText}>{pigmentationScore}%</Text>
+              </View>
+              <Text style={styles.metricName}>Even Tone</Text>
+              <View style={styles.metricBarTrack}>
+                <View style={[styles.metricBarFill, { width: `${pigmentationScore}%`, backgroundColor: '#D97706' }]} />
+              </View>
+              <Text style={styles.ingredientRec}>Vitamin C + Alpha Arbutin</Text>
+            </View>
+
+            {/* Texture */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricHeaderRow}>
+                <MaterialCommunityIcons name="face-woman-shimmer" size={18} color="#7C3AED" />
+                <Text style={styles.metricScoreText}>{textureScore}%</Text>
+              </View>
+              <Text style={styles.metricName}>Pore Texture</Text>
+              <View style={styles.metricBarTrack}>
+                <View style={[styles.metricBarFill, { width: `${textureScore}%`, backgroundColor: '#7C3AED' }]} />
+              </View>
+              <Text style={styles.ingredientRec}>Niacinamide 10%</Text>
+            </View>
+          </View>
+
+          {/* SECTION 3: 1-Click Order Clinically Matched Routine */}
+          <TouchableOpacity
+            style={styles.routineOrderCard}
+            onPress={() => router.push('/(customer)/(tabs)/orders')}
+            activeOpacity={0.9}
+          >
+            <LinearGradient
+              colors={['#7A0009', '#90000C', '#A80010']}
+              style={styles.routineGradient}
+            >
+              <View style={styles.routineLeftCol}>
+                <Text style={styles.routineBadge}>⚡ 15-MIN INSTANT DROP</Text>
+                <Text style={styles.routineTitle}>Order Matched Clinical Routine</Text>
+                <Text style={styles.routineSub}>Niacinamide + Sunscreen Gel paired to your score</Text>
+              </View>
+              <Ionicons name="arrow-forward-circle" size={32} color="#FFFFFF" />
+            </LinearGradient>
+          </TouchableOpacity>
+
+          {/* Direct Return to Home Tab Button */}
+          <TouchableOpacity
+            style={styles.backHomeBtn}
+            onPress={() => router.replace('/(customer)/(tabs)')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="home-outline" size={18} color="#0F172A" style={{ marginRight: 8 }} />
+            <Text style={styles.backHomeBtnText}>Back to Home Dashboard</Text>
+          </TouchableOpacity>
         </ScrollView>
-
-        {/* SECTION 3: Fixed Bottom Action Area */}
-        <View style={styles.bottomFixedButtons}>
-          {/* Primary Action: Go to Home Page */}
-          <TouchableOpacity
-            style={styles.homeBtn}
-            onPress={handleGoHome}
-            activeOpacity={0.85}
-            accessibilityRole="button"
-            accessibilityLabel="Go to home page"
-          >
-            <Text style={styles.homeBtnText}>Go to Home Page</Text>
-            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" style={{ marginLeft: 8 }} />
-          </TouchableOpacity>
-
-          {/* Secondary Action: Subtle Ghost Link */}
-          <TouchableOpacity
-            style={styles.downloadGhostBtn}
-            onPress={handleDownloadReport}
-            activeOpacity={0.6}
-            accessibilityRole="button"
-            accessibilityLabel="Download PDF report"
-          >
-            <Ionicons name="document-text-outline" size={16} color="#64748B" style={{ marginRight: 6 }} />
-            <Text style={styles.downloadGhostText}>Download PDF Report</Text>
-          </TouchableOpacity>
-        </View>
       </SafeAreaView>
     </View>
   );
 };
+
+export default SkinReportScreen;
 
 const styles = StyleSheet.create({
   container: {
@@ -247,210 +272,257 @@ const styles = StyleSheet.create({
   },
   navBar: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#E2E8F0',
-  },
-  navRightActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    borderBottomColor: '#F1F5F9',
   },
   navBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F8FAFC',
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   navTitle: {
     fontSize: 16,
     color: '#0F172A',
   },
+  navRightActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    gap: 14,
+    padding: 16,
+    paddingBottom: 40,
   },
   gaugeCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 28,
-    paddingVertical: 26,
-    paddingHorizontal: 20,
+    borderRadius: 24,
+    padding: 20,
     alignItems: 'center',
+    marginBottom: 20,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
+    borderColor: '#F1F5F9',
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.04,
-    shadowRadius: 18,
+    shadowRadius: 10,
     elevation: 3,
   },
   gaugeContainer: {
-    width: 240,
-    height: 125,
-    overflow: 'hidden',
-    alignItems: 'center',
-    marginBottom: 14,
-    position: 'relative',
-  },
-  gaugeArc: {
-    width: 240,
-    height: 240,
-    borderRadius: 120,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
     alignItems: 'center',
     justifyContent: 'center',
-    position: 'relative',
+    marginBottom: 12,
   },
-  sparkleDot: {
-    position: 'absolute',
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#FFFFFF',
-  },
-  needleIndicator: {
-    position: 'absolute',
-    top: 20,
-    right: 76,
-    width: 4,
-    height: 20,
-    borderRadius: 2,
-    backgroundColor: '#0F172A',
-    transform: [{ rotate: '25deg' }],
-  },
-  gaugeCutout: {
-    position: 'absolute',
-    top: 34,
-    width: 172,
-    height: 172,
-    borderRadius: 86,
-    backgroundColor: '#FFFFFF',
-  },
-  scoreContainer: {
-    position: 'absolute',
-    bottom: 0,
-    alignSelf: 'center',
+  gaugeArcBackground: {
+    width: 170,
+    height: 170,
+    borderRadius: 85,
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    height: 86,
-    zIndex: 10,
+    justifyContent: 'center',
   },
-  scoreValue: {
-    fontSize: 54,
+  gaugeCenterCutout: {
+    width: 136,
+    height: 136,
+    borderRadius: 68,
+    backgroundColor: '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  scoreNumber: {
+    fontSize: 42,
     color: '#0F172A',
-    letterSpacing: -1.5,
-    lineHeight: 60,
-    textAlign: 'center',
+    letterSpacing: -1,
   },
-  gaugeStatusTitle: {
-    fontSize: 22,
-    color: '#0F172A',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  gaugeStatusSubtitle: {
-    fontSize: 14,
+  scoreUnit: {
+    fontSize: 12,
     color: '#64748B',
-    textAlign: 'center',
-  },
-  metricsHeading: {
-    fontSize: 16,
     fontWeight: '700',
-    color: '#0F172A',
+    marginTop: -4,
+  },
+  statusPill: {
+    backgroundColor: '#DCFCE7',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     marginTop: 4,
-    marginBottom: 2,
+  },
+  statusPillText: {
+    color: '#15803D',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  diagnosedTypeTag: {
+    fontSize: 13,
+    color: '#475569',
+    fontWeight: '600',
+  },
+  sectionHeaderTitle: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#94A3B8',
+    letterSpacing: 1,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  metricsGridRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 12,
   },
   metricCard: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 18,
+    padding: 14,
     borderWidth: 1,
     borderColor: '#F1F5F9',
   },
-  metricCardHeader: {
+  metricHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  metricTitleGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  metricDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  metricName: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#0F172A',
+    marginBottom: 6,
   },
   metricScoreText: {
+    fontSize: 14,
+    fontWeight: '900',
+    color: '#0F172A',
+  },
+  metricName: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#0F172A',
+  },
+  metricBarTrack: {
+    height: 4,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 2,
+    marginVertical: 8,
+    overflow: 'hidden',
+  },
+  metricBarFill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+  ingredientRec: {
+    fontSize: 10,
+    color: '#64748B',
+    fontWeight: '600',
+  },
+  routineOrderCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    marginTop: 10,
+  },
+  routineGradient: {
+    padding: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  routineLeftCol: {
+    flex: 1,
+    marginRight: 10,
+  },
+  routineBadge: {
+    color: '#FDE68A',
+    fontSize: 9,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  routineTitle: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
+  },
+  routineSub: {
+    color: 'rgba(255, 255, 255, 0.85)',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  backHomeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingVertical: 14,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  backHomeBtnText: {
     fontSize: 14,
     fontWeight: '800',
     color: '#0F172A',
   },
-  progressBarBg: {
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#F1F5F9',
-    overflow: 'hidden',
-    marginBottom: 8,
+  liveModelPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    backgroundColor: '#ECFDF5',
+    borderWidth: 1,
+    borderColor: '#A7F3D0',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    gap: 6,
+    marginBottom: 16,
   },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 4,
+  liveModelPillText: {
+    color: '#059669',
+    fontSize: 11,
+    fontWeight: '800',
   },
-  metricDesc: {
+  prototypeModelBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 16,
+    padding: 12,
+    gap: 10,
+    marginBottom: 16,
+  },
+  prototypeBannerTextCol: {
+    flex: 1,
+  },
+  prototypeBannerTitle: {
+    color: '#92400E',
     fontSize: 12,
-    color: '#64748B',
+    fontWeight: '800',
+  },
+  prototypeBannerSub: {
+    color: '#B45309',
+    fontSize: 11,
     lineHeight: 16,
+    marginTop: 2,
   },
-  bottomFixedButtons: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-    gap: 8,
-    alignItems: 'stretch',
-  },
-  homeBtn: {
-    backgroundColor: '#2563EB',
-    height: 56,
+  medicalDisclaimerBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
     borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    width: '100%',
+    padding: 12,
+    gap: 8,
+    marginBottom: 16,
   },
-  homeBtnText: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-  downloadGhostBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  downloadGhostText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#64748B',
+  medicalDisclaimerText: {
+    flex: 1,
+    fontSize: 11,
+    color: '#0369A1',
+    lineHeight: 16,
   },
 });

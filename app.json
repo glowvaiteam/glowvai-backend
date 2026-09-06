@@ -23,8 +23,14 @@
       "adaptiveIcon": {
         "backgroundColor": "#0F172A"
       },
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBnoALeig5N1NnsBijm23oaATTfcNHqwXg"
+        }
+      },
       "permissions": [
         "CAMERA",
+        "RECORD_AUDIO",
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
         "RECEIVE_BOOT_COMPLETED",
@@ -33,7 +39,19 @@
     },
     "plugins": [
       "expo-router",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow GlowVAI to access your camera for clinical face scanning."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow GlowVAI to access your location for express delivery address detection."
+        }
+      ]
     ],
     "scheme": "glowvai",
     "experiments": {

@@ -1,6 +1,6 @@
 import React from 'react';
-import { WelcomeScreen } from '../src/features/onboarding';
+import { Redirect } from 'expo-router';
 
 export default function AppEntryScreen() {
-  return <WelcomeScreen />;
+  return <Redirect href="/(customer)/(tabs)" />;
 }

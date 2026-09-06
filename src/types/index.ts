@@ -9,3 +9,4 @@ export * from './product';
 export * from './delivery';
 export * from './order';
 export * from './scan';
+export * from './qcommerce';

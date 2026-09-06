@@ -1,35 +1,30 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Header } from '../../../src/components/ui';
 
 export default function ScanTab() {
   const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
-      <Header title="AI Skin Diagnostics" />
       <View style={styles.content}>
         <View style={styles.scanTargetCircle}>
-          <MaterialCommunityIcons name="face-recognition" size={80} color="#38BDF8" />
+          <MaterialCommunityIcons name="face-recognition" size={72} color="#0052FF" />
         </View>
-        <Text style={styles.title}>Scan Your Skin</Text>
+
+        <Text style={styles.tagline}>GLOWVAI BIOMETRICS</Text>
+        <Text style={styles.title}>Clinical Face Scan</Text>
         <Text style={styles.subtitle}>
-          Capture a clear selfie in natural light to analyze acne, texture, hydration, and dark spots.
+          Capture a natural-light selfie to compute your 6-dimension skin pulse: Acne, Hydration, Pores, Melanin, Sebum, and Barrier.
         </Text>
+
         <TouchableOpacity
           style={styles.startScanBtn}
           onPress={() => router.push('/(customer)/scan/camera')}
-          activeOpacity={0.8}
+          activeOpacity={0.85}
         >
-          <LinearGradient
-            colors={['#1D4ED8', '#2563EB', '#38BDF8']}
-            style={styles.btnGradient}
-          >
-            <Text style={styles.btnText}>Start Face Scan</Text>
-          </LinearGradient>
+          <Text style={styles.btnText}>Launch Viewfinder</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -39,11 +34,11 @@ export default function ScanTab() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#060B18',
+    backgroundColor: '#FDFBF7',
   },
   content: {
     flex: 1,
-    padding: 24,
+    padding: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -51,41 +46,58 @@ const styles = StyleSheet.create({
     width: 140,
     height: 140,
     borderRadius: 70,
-    backgroundColor: '#0F1E3D',
-    borderWidth: 2,
-    borderColor: '#38BDF8',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 24,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 3,
+  },
+  tagline: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#0052FF',
+    letterSpacing: 1.8,
+    marginBottom: 6,
+    textTransform: 'uppercase',
   },
   title: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: '800',
-    color: '#F8FAFC',
-    marginBottom: 8,
+    color: '#0F172A',
+    marginBottom: 10,
   },
   subtitle: {
     fontSize: 14,
-    color: '#94A3B8',
+    color: '#64748B',
     textAlign: 'center',
-    lineHeight: 20,
-    maxWidth: 280,
+    lineHeight: 22,
+    maxWidth: 300,
     marginBottom: 32,
   },
   startScanBtn: {
     width: '100%',
-    maxWidth: 260,
-    borderRadius: 14,
-    overflow: 'hidden',
-  },
-  btnGradient: {
+    maxWidth: 240,
+    borderRadius: 16,
+    backgroundColor: '#0F172A',
     paddingVertical: 16,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 4,
   },
   btnText: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
 });

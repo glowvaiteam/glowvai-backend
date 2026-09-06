@@ -1,0 +1,34 @@
+# Dependencies and caches
+node_modules/
+.venv/
+.git/
+.expo/
+.agents/
+
+# Native build caches
+android/.gradle/
+android/app/build/
+android/build/
+android/.cxx/
+
+# Non-mobile backend / ML services
+admin/
+backend/
+cnn_model/
+ml-model/
+functions/
+designs/
+docs/
+research/
+logs/
+scripts/
+tests/
+
+# Large binaries & media dumps
+*.zip
+*.tar
+*.gz
+*.avif
+*.mp4
+product images/
+system-prompts/

@@ -29,6 +29,8 @@ export interface SkinScanReport {
   primaryConcerns: string[];
   recommendedRoutineIds: string[];
   imageUri?: string;
+  isInferenceLive?: boolean;
+  inferenceError?: string;
 }
 
 export interface RoutineProduct {

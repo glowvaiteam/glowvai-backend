@@ -2,4 +2,4 @@
  * Support & Feedback Feature Module
  */
 
-export interface SupportFeatureExports {}
+export * from './SupportScreen';

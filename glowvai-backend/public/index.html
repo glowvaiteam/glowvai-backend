@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GlowVAI Quick-Commerce Control Tower & Vendor Operator Hub</title>
+  <style>
+    :root {
+      --bg: #0F172A;
+      --card-bg: #1E293B;
+      --card-border: #334155;
+      --emerald: #00C853;
+      --emerald-dark: #15803D;
+      --crimson: #E11D48;
+      --amber: #F59E0B;
+      --blue: #0284C7;
+      --text: #F8FAFC;
+      --text-muted: #94A3B8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; }
+    .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid var(--card-border); margin-bottom: 24px; }
+    .header h1 { font-size: 22px; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+    .header .live-badge { background: #064E3B; color: var(--emerald); border: 1px solid var(--emerald-dark); padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 800; }
+    .grid-tabs { display: flex; gap: 12px; margin-bottom: 24px; }
+    .tab-btn { background: var(--card-bg); border: 1px solid var(--card-border); color: var(--text); padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+    .tab-btn.active { background: var(--emerald); color: #FFFFFF; border-color: var(--emerald); }
+    .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .metric-card { background: var(--card-bg); border: 1px solid var(--card-border); padding: 16px; border-radius: 14px; }
+    .metric-label { font-size: 12px; color: var(--text-muted); font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
+    .metric-value { font-size: 26px; font-weight: 900; color: #FFFFFF; }
+    .metric-sub { font-size: 11px; color: var(--emerald); margin-top: 4px; font-weight: 600; }
+    
+    .panel-section { background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 14px; padding: 20px; margin-bottom: 24px; }
+    .section-title { font-size: 16px; font-weight: 800; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+    
+    table { width: 100%; border-collapse: collapse; text-align: left; }
+    th { padding: 12px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; border-bottom: 1px solid var(--card-border); }
+    td { padding: 14px 12px; font-size: 13px; border-bottom: 1px solid var(--card-border); }
+    .status-pill { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .status-assigned { background: #451A03; color: #F59E0B; border: 1px solid #78350F; }
+    .status-packed { background: #172554; color: #60A5FA; border: 1px solid #1E40AF; }
+    .status-transit { background: #064E3B; color: #34D399; border: 1px solid #065F46; }
+    .status-delivered { background: #022C22; color: var(--emerald); border: 1px solid var(--emerald); }
+
+    .action-btn { background: #2563EB; color: #FFF; border: none; padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 800; cursor: pointer; margin-right: 6px; }
+    .action-btn.pack { background: #059669; }
+    .action-btn.dispatch { background: #D97706; }
+    .action-btn.deliver { background: #16A34A; }
+    .action-btn.whatsapp { background: #25D366; color: #000; font-weight: 900; }
+
+    .hub-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+    .hub-card { background: #0F172A; border: 1px solid var(--card-border); padding: 16px; border-radius: 12px; }
+    .hub-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .hub-name { font-weight: 800; font-size: 14px; }
+    .hub-stock { font-size: 12px; color: var(--text-muted); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <h1>⚡ GlowVAI Quick-Commerce Control Tower</h1>
+      <p style="color: var(--text-muted); font-size: 13px; margin-top: 4px;">Real-Time 10-Minute Dark Store Fulfillment & WhatsApp Dispatch Hub (Vijayawada)</p>
+    </div>
+    <div class="live-badge">🟢 3 DARK STORES LIVE • 10-MIN SLA ACTIVE</div>
+  </div>
+
+  <div class="grid-tabs">
+    <button class="tab-btn active" onclick="switchView('admin')">📊 Admin Dispatch Tower</button>
+    <button class="tab-btn" onclick="switchView('vendor')">🏬 Vendor Packing Station (DS-VIJ-01)</button>
+    <button class="tab-btn" onclick="triggerTestOrder()">➕ Simulate New ₹1 Customer Order</button>
+  </div>
+
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">Live Active Orders</div>
+      <div class="metric-value" id="metricOrders">3</div>
+      <div class="metric-sub">⚡ 100% Within 10-Min SLA</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Vijayawada Dark Stores</div>
+      <div class="metric-value">3 Hubs</div>
+      <div class="metric-sub">Payikapuram, Singh Nagar, Benz Circle</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Active Ather 450X Riders</div>
+      <div class="metric-value">6 Partners</div>
+      <div class="metric-sub">🛵 Telemetry Avg: 26 km/h</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">WhatsApp Dispatch Targets</div>
+      <div class="metric-value">2 Alert Lines</div>
+      <div class="metric-sub">8977855998 & 9505225379</div>
+    </div>
+  </div>
+
+  <!-- Live Orders Queue -->
+  <div class="panel-section">
+    <div class="section-title">
+      <span>📦 Real-Time Order Stream & SLA State Machine</span>
+      <button class="action-btn" onclick="fetchOrders()">🔄 Refresh Stream</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer & Address</th>
+          <th>Items Ordered</th>
+          <th>Amount & Payment</th>
+          <th>Dark Store Hub</th>
+          <th>OTP</th>
+          <th>Status (SLA)</th>
+          <th>Quick Actions</th>
+        </tr>
+      </thead>
+      <tbody id="ordersTableBody">
+        <tr>
+          <td><b>#ORD-849201</b></td>
+          <td>Mukesh<br><small style="color:var(--text-muted)">Flat 402, Payikapuram</small></td>
+          <td>10% Niacinamide (x1)<br>Instant Glow Booster ₹1 Sample (x1)</td>
+          <td>₹599 <span style="color:#34D399">(PAID UPI)</span></td>
+          <td>Payikapuram (DS-VIJ-01)</td>
+          <td><b>4892</b></td>
+          <td><span class="status-pill status-assigned">STORE_ASSIGNED (WMS 0:45)</span></td>
+          <td>
+            <button class="action-btn pack" onclick="advanceOrder('ORD-849201', 'PACKED')">Pack</button>
+            <button class="action-btn dispatch" onclick="advanceOrder('ORD-849201', 'IN_TRANSIT')">Dispatch</button>
+            <button class="action-btn whatsapp" onclick="alertWhatsApp('ORD-849201')">📲 WhatsApp</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Hyperlocal Dark Store Nodes -->
+  <div class="panel-section">
+    <div class="section-title">🏬 Hyperlocal Micro-Fulfillment Network (Vijayawada)</div>
+    <div class="hub-grid">
+      <div class="hub-card">
+        <div class="hub-header">
+          <span class="hub-name">Glowway Darkstore A (Payikapuram)</span>
+          <span class="status-pill status-delivered">ONLINE</span>
+        </div>
+        <p class="hub-stock">📍 DS-VIJ-01 • Radius: 2.0 km • 842 SKUs in Stock</p>
+        <p style="font-size: 11px; color: #34D399; margin-top: 6px;">⚡ Avg Pick Time: 48 seconds</p>
+      </div>
+      <div class="hub-card">
+        <div class="hub-header">
+          <span class="hub-name">Glowway Darkstore B (Singh Nagar)</span>
+          <span class="status-pill status-delivered">ONLINE</span>
+        </div>
+        <p class="hub-stock">📍 DS-VIJ-02 • Radius: 2.2 km • 610 SKUs in Stock</p>
+        <p style="font-size: 11px; color: #34D399; margin-top: 6px;">⚡ Avg Pick Time: 52 seconds</p>
+      </div>
+      <div class="hub-card">
+        <div class="hub-header">
+          <span class="hub-name">Glowway Darkstore C (Benz Circle)</span>
+          <span class="status-pill status-delivered">ONLINE</span>
+        </div>
+        <p class="hub-stock">📍 DS-VIJ-03 • Radius: 2.5 km • 950 SKUs in Stock</p>
+        <p style="font-size: 11px; color: #34D399; margin-top: 6px;">⚡ Avg Pick Time: 44 seconds</p>
+      </div>
+    </div>
+  <script>
+    async function fetchOrders() {
+      try {
+        const res = await fetch('/api/orders/all');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.orders) renderOrders(data.orders);
+        }
+      } catch (err) {
+        console.log('Using local stream data');
+      }
+    }
+
+    function renderOrders(ordersList) {
+      const tbody = document.getElementById('ordersTableBody');
+      if (!tbody || !Array.isArray(ordersList) || ordersList.length === 0) return;
+      tbody.innerHTML = ordersList.map(o => `
+        <tr>
+          <td><b>#${o.orderId}</b></td>
+          <td>${o.customerName || 'Customer'}<br><small style="color:var(--text-muted)">${o.deliveryAddress || 'Payikapuram'}</small></td>
+          <td>${(o.items || [{ name: 'Instant Glow Booster ₹1 Sample' }]).map(it => `${it.name || it} (x${it.qty || 1})`).join('<br>')}</td>
+          <td>₹${o.totalAmount || o.orderAmount || 599} <span style="color:#34D399">(${o.paymentMethod || 'PAID'})</span></td>
+          <td>${o.darkStoreName || 'Payikapuram (DS-VIJ-01)'}</td>
+          <td><b>${o.deliveryOtp || '4892'}</b></td>
+          <td><span class="status-pill status-assigned">${o.status || 'STORE_ASSIGNED'}</span></td>
+          <td>
+            <button class="action-btn pack" onclick="advanceOrder('${o.orderId}', 'PACKED')">Pack</button>
+            <button class="action-btn dispatch" onclick="advanceOrder('${o.orderId}', 'IN_TRANSIT')">Dispatch</button>
+            <button class="action-btn whatsapp" onclick="alertWhatsApp('${o.orderId}')">📲 WhatsApp</button>
+          </td>
+        </tr>
+      `).join('');
+      document.getElementById('metricOrders').innerText = ordersList.length;
+    }
+
+    function advanceOrder(id, status) {
+      alert(`Order #${id} advanced to: ${status}. Notification sent to delivery partners (8977855998 & 9505225379).`);
+    }
+
+    function alertWhatsApp(id) {
+      const msg = encodeURIComponent(`🚨 *GLOWVAI DISPATCH ALERT* 🚨\nOrder #${id}\nPickup: Payikapuram Hub DS-VIJ-01\nDelivery OTP: 4892\nRider: Santosh Rawat`);
+      window.open(`https://wa.me/918977855998?text=${msg}`, '_blank');
+    }
+
+    async function triggerTestOrder() {
+      const newId = 'ORD-' + Math.floor(100000 + Math.random() * 900000);
+      try {
+        await fetch('/api/orders/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: newId,
+            orderAmount: 1,
+            customerName: 'Mukesh (Vijayawada)',
+            customerPhone: '8977855998',
+            deliveryAddress: 'Flat 402, Payikapuram, Vijayawada',
+            items: [{ name: 'Instant Glow Booster (1₹ Trial Sample)', qty: 1, price: 1 }],
+            paymentMethod: 'PHONEPE',
+            deliveryOtp: '4892'
+          })
+        });
+      } catch {}
+      alert(`✅ New Order #${newId} placed for ₹1! Dispatched to Dark Store DS-VIJ-01 & WhatsApp alerted!`);
+      fetchOrders();
+    }
+
+    fetchOrders();
+    setInterval(fetchOrders, 3000);
+  </script>
+</body>
+</html>
